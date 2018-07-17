@@ -16,8 +16,8 @@ func Home(c echo.Context) error {
 }
 
 func Text(c echo.Context) error {
-	//app := c.(*CEC).App
-	return c.String(http.StatusOK, "Hello, the text in config is: ") //+app.ATool2.GetText())
+	app := c.(*CEC).App
+	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool2.GetText())
 }
 
 // Pool ----------------------------------------------------------------------------------------------------------------

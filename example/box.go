@@ -9,21 +9,6 @@ import (
 // AppToolBox is the struct to initialize with sprbox.
 // It contains pluggable libraries, implementing the
 // 'boxable' interface: func Go2Box(configPath string) error.
-//type AppToolBox struct {
-//	WPool workerful.Workerful `sprbox:"workerpool.yml"`
-//
-//	// By default sprbox will look for a file named like the
-//	// struct field name (ATool.yml, case insensitive).
-//	ATool    Tool
-//	AToolPtr *Tool `sprbox:"atool.yml"`
-//
-//	// Optionally pass a config file name in the tag.
-//	ATool2 Tool
-//
-//	// Optionally add the 'omit' value so sprbox will skip that field.
-//	AnOmittedTool Tool `sprbox:"omit"`
-//}
-
 type AppToolBox struct {
 	WPool workerful.Workerful `sprbox:"workerpool.yml"`
 
@@ -31,6 +16,12 @@ type AppToolBox struct {
 	// struct field name (ATool.yml, case insensitive).
 	ATool    Tool
 	AToolPtr *Tool `sprbox:"atool.yml"`
+
+	// Optionally pass a config file name in the tag.
+	ATool2 Tool
+
+	// Optionally add the 'omit' value so sprbox will skip that field.
+	AnOmittedTool Tool `sprbox:"omit"`
 }
 
 var App AppToolBox
@@ -62,7 +53,7 @@ func init() {
 	// In that case we set the environment
 	// manually, which take precedence on Git Branch name,
 	// Anyway having the repo set will print also git info in console.
-	sprbox.VCS = sprbox.NewRepository("./")
+	//sprbox.VCS = sprbox.NewRepository("./")
 
 	// Print some useful info.
 	sprbox.PrintInfo(false)
@@ -80,9 +71,9 @@ type CEC struct {
 	App *AppToolBox
 }
 
-// EchoBoxes provides the AppBox (inherited from echo.Context) to echo.
+// EchoSprBox provides the AppBox (inherited from echo.Context) to echo.
 // This middleware should be registered before any other.
-func EchoBoxes(h echo.HandlerFunc) echo.HandlerFunc {
+func EchoSprBox(h echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// pass the pointer to 'app'
 		embeddedBox := &CEC{Context: c, App: &App}

@@ -9,7 +9,7 @@ import (
 )
 
 // envVar define the name of the environment variable to look for.
-const envVar = "BUILD_ENV"
+const EnvVarKey = "BUILD_ENV"
 
 var (
 	// BUILDENV define the current environment.
@@ -31,7 +31,7 @@ var (
 	BUILDENV = ""
 
 	// VCS is the project version control system, by default is nil.
-	VCS *Repository
+	VCS *Repository = NewRepository("./")
 
 	privateTAG = ""
 
@@ -64,15 +64,15 @@ var inferredBy string
 func loadTag() {
 	if len(BUILDENV) > 0 {
 		privateTAG = BUILDENV
-		inferredBy = ", inferred by 'BUILDENV' var, set manually."
+		inferredBy = ", inferred from 'BUILDENV' var, set manually."
 		return
-	} else if privateTAG = os.Getenv(envVar); len(privateTAG) > 0 {
-		inferredBy = fmt.Sprintf(", inferred by '%s' environment variable.", envVar)
+	} else if privateTAG = os.Getenv(EnvVarKey); len(privateTAG) > 0 {
+		inferredBy = fmt.Sprintf(", inferred from '%s' environment variable.", EnvVarKey)
 		return
 	} else if VCS != nil {
 		if VCS.Error == nil {
 			privateTAG = VCS.BranchName
-			inferredBy = "'', inferred by git.BranchName."
+			inferredBy = "'', inferred from git.BranchName."
 			return
 		}
 	}

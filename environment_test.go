@@ -3,6 +3,7 @@ package sprbox
 import "testing"
 
 func TestEnvironment(t *testing.T) {
+	BUILDENV = Local.String()
 	if Env() != Local {
 		t.Error("Local environment not matched")
 	}

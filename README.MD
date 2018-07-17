@@ -1,35 +1,67 @@
 # SpareBox 
+
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
+[![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
+[![Coverage Status](https://coveralls.io/repos/github/oblq/sprbox/badge.svg?branch=master)](https://coveralls.io/github/oblq/sprbox?branch=master)
+[![dependencies Status](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](https://travis-ci.org/oblq/sprbox)
+[![version](https://img.shields.io/badge/version-1.0.0-yellow.svg)](https://github.com/oblq/sprbox)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-**Sparebox** (written 'sprbox') is a toolbox factory with automatic package configuration based on your build environment.
 
-Given a predefined struct:
+
+**SpareBox** is a toolbox factory with automatic package configuration based on your build environment.
+
+Given your toolbox struct, composed by compatible packages (see the `boxable` interface):  
 ```
 type MyToolBox struct {
-	WPool       workerful.Workerful
-	ATool       Tool 
-	AToolPtr    *Tool
+	WPool workerful.Workerful `sprbox:"workerpool.yml"`
+
+	// By default sprbox will look for a file named like the
+	// struct field name (ATool.yml, case insensitive).
+	ATool    Tool
+	AToolPtr *Tool `sprbox:"atool.yml"`
+
+	// ...or you can skip initialization and initialize it later by code
+	AnOmittedTool Tool `sprbox:"omit"`
 }
-```
-...you can init and configure it in one line of code:
 
-```
 var ToolBox MyToolBox
+```
 
+...and a config path with a subfolder for every environment you plan to use:
+    
+    ├── MyConfigPath
+    │   ├── development
+    │   ├── local
+    │   ├── production
+    │   ├── staging
+    │   └── testing
+    └── main.go
+     
+You can init and configure it in one line of code:
+
+
+
+
+```
 sprbox.InitAndConfig(&ToolBox, "path/to/config")
 ```
 ...and the result is:
 
-![loading](load.png)
+![loading](./starting.png)
 
+See the example: [example](example)
 
-See the example: [example](example/)
+## Install
+```sh
+go get -u github.com/oblq/sprbox
+```
 
 ## Conforming your package
 
 Start using your package in `sprbox` is simple, you just have to implement the `boxable` interface to automatically parse the config file:
 
-```go
+```
 type boxable interface {
 	Go2Box(string) error
 }
@@ -37,9 +69,9 @@ type boxable interface {
 
 For instance:
 
-```go
+```
 type MyPackage struct {
-	something string `yaml:"something"`
+	Something string `yaml:"something"`
 }
 
 // Go2Box is the sprbox 'boxable' interface implementation.
@@ -55,68 +87,70 @@ func (mp *MyPackage) Go2Box(configPath string) error {
 
 Remember to add `sprbox` in your repo topics if you like it.
 
-## Install
-```sh
-go get -u github.com/oblq/sprbox
-```
-
 ## How it works
 
-Sparebox support the five standard build environment (local, testing, development, staging and production) and automatically select the right config file based on a tag, using RegEx expressions to match it.
+SpareBox support the five standard build environment (local, testing, development, staging and production) and automatically select the right config file based on a tag, using RegEx to match it.
 
 Every environment has a set of patterns and they can be edited:
 ```
-sprbox.Development.SetExps([]string{"feature/f1", "feature/f2"})
-sprbox.Development.AppendExp("feature/f*")
-match := sprbox.Development.MatchTag("feature/f5")
+sprbox.Staging.SetExps([]string{"feature/f1", "feature/f2"})
+sprbox.Testing.AppendExp("feature/f*")
+match := sprbox.Testing.MatchTag("feature/f5")
 ```  
-The tag can be obtained in three different ways, in a precise order, if one can't be determined SpareBox will check the next one:
+SpareBox can obtain the tag in three different ways, in a precise order, if one can't be determined SpareBox will check the next one:
 
 1. The `BUILDENV` var in sprbox package (`sprbox.BUILDENV`).  
 Can be defined by code or, since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
 `LDFLAGS="-X ${GOPATH:-$HOME/go}/src/github.com/oblq/sprbox.BUILDENV=develop"`  
-  `go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api`
+`go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api`
 
 2. The environment variable `BUILD_ENV` (`os.GetEnv("BUILD_ENV")`).  
-3. The branch name, Git Flow is supported.  
-You must pass the git repository path for this:  
+
+3. The branch name, Git Flow for CI/CD are supported.  
+By default the working dir is used, you can pass a different git repository path for this:  
 `sprbox.VCS = sprbox.NewRepository("path/to/repo")`  
 Then the branch name will be checked against the RegEx patterns for any environment.
 
 The default RegEx pattern are:  
 - `Production 	[]string{"production", "master"}`
-- `Staging 		[]string{"staging", "release/\*", "hotfix/\*"}`
-- `Testing 	    []string{"testing", "test", "feature/\*"}`
+- `Staging 		[]string{"staging", "release/*", "hotfix/*"}`
+- `Testing 	    []string{"testing", "test", "feature/*"}`
 - `Development  []string{"development", "develop", "dev"}`
 - `Local        []string{"local"}`
 	
-The project must contain a config path with a subfolder for every environment you plan to use:
-    
-    ├── MyConfigPath
-    │   ├── development
-    │   ├── local
-    │   ├── production
-    │   ├── staging
-    │   └── testing
-    └── main.go
-        
-...then sparebox will grab the correct config file, in the right directory, for the right environment, it also supports tags:
-```go
-type MyToolBox struct {
-	// by default sprbox will look for 'WPool.yml' (case insensitive) in the config path.
-	WPool           workerful.Workerful 
-	
-	// ...or you can define a custom config file.
- 	ATool           Tool    `sprbox:"atool1.yml"`  
-	AToolPtr        *Tool   `sprbox:"atool2.yml"`
-	
-	// ...or you can skip initialization and initialize it later by code.
-	AToolOmitted    *Tool   `sprbox:"omit"`
-}
+SpareBox will grab the correct config file, in the right directory, for the right environment.
 
-var ToolBox MyToolBox
+Optionally you can:
+- Manually set the environment:  
+`sprbox.BUILDENV = "dev"`  
+..also like this:  
+`err := os.Setenv(sprbox.EnvVarKey, "dev")`
 
-sprbox.VCS = sprbox.NewRepository("./")
-sprbox.PrintInfo(false) // Print some useful info.
-sprbox.InitAndConfig(&ToolBox, "./MyConfigPath")
-```       
+
+- Set a different repository path to automatically select config files based on branch name RegEx matching ...or to simply print git info in console:  
+`sprbox.VCS = sprbox.NewRepository("path/to/repo")`  
+`sprbox.VCS.BranchName // Commit, Tag, Build and Path`  
+`sprbox.VCS.PrintInfo()`
+
+- Print info in console:  
+`sprbox.PrintInfo(false)`
+
+- Get the current environment:  
+`if sprbox.Env() == sprbox.Production { doSomething() }`  
+`sprbox.Env().String()`  
+`sprbox.Env().PrintInfo()`
+
+- Get the config path for the current build environment.
+`sprbox.ConfigPathByEnv("path/to/config") // -> "path/to/config/<environment>"`
+
+## Compatible tools
+
+- [`workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
+
+## Author
+
+- [Marco Muratori](mailto:marcomrtr@gmail.com) 
+
+## License
+
+Workerful is available under the MIT license. See the [LICENSE](./LICENSE) file for more information.

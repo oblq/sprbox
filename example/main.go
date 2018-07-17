@@ -9,7 +9,7 @@ import (
 func main() {
 	e := echo.New()
 	e.HideBanner = true
-	e.Use(EchoBoxes)
+	e.Use(EchoSprBox)
 	e.GET("/", Home)
 	e.GET("/text", Text)
 	e.GET("/pool", DoSomeJobs)
