@@ -20,7 +20,7 @@ var (
 	// If TAG is empty then the environment variable 'BUILD_ENV' will be used.
 	//
 	// If also the 'BUILD_ENV' environment variable is empty,
-	// if you have called SetUpGit(path), then the git.BranchName will be used.
+	// if you have setup the VCS var, then the git.BranchName will be used.
 	// Git-Flow automatic environment selection based on branch name is also supported.
 	// Here the default environment RegEx, you can customize them as you want:
 	//  - Production 	exps: Exps{"production", "master"}
@@ -81,7 +81,7 @@ func loadTag() {
 }
 
 // Env returns the current selected environment by
-// matching the ENVTag variable against the environments RegEx (Exps).
+// matching the 'BUILDENV' variable against the environments RegEx.
 func Env() *Environment {
 	loadTag()
 	switch {
