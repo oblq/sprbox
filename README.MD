@@ -135,7 +135,7 @@ Optionally you can:
 `sprbox.Env().String()`  
 `sprbox.Env().PrintInfo()`
 
-- Get the config path for the current build environment.
+- Get the config path for the current build environment.  
 `sprbox.ConfigPathByEnv("path/to/config") // -> "path/to/config/<environment>"`
 
 ## Compatible tools
