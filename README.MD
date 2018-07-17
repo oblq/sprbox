@@ -20,7 +20,7 @@ sprbox.InitAndConfig(&ToolBox, "path/to/config")
 ```
 ...and the result is:
 
-![loading](loading.png)
+![loading](load.png)
 
 
 See the example: [example](example/)

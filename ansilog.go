@@ -186,6 +186,6 @@ func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
 			fmt.Printf("%s | %s | %s\n", blue(objName), objType, red("-> "+err.Error()))
 		}
 	} else {
-		fmt.Printf("%s | %s | %s\n", blue(objName), objType, green("<- loaded..."))
+		fmt.Printf("%s | %s | %s\n", blue(objName), objType, green("<- loaded"))
 	}
 }

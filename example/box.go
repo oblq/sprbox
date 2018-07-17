@@ -56,13 +56,13 @@ func init() {
 	//	- Testing 		exps: Exps{"testing", "test", "feature/*"}
 	//	- Development 	exps: Exps{"development", "develop", "dev"}
 	//	- Local 		exps: Exps{"local", ""}
-	sprbox.BUILDENV = "local"
+	//sprbox.BUILDENV = "local"
 
 	// Optionally set the repository path.
 	// In that case we set the environment
 	// manually, which take precedence on Git Branch name,
 	// Anyway having the repo set will print also git info in console.
-	//sprbox.VCS = sprbox.NewRepository("")
+	sprbox.VCS = sprbox.NewRepository("./")
 
 	// Print some useful info.
 	sprbox.PrintInfo(false)

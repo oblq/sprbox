@@ -72,12 +72,12 @@ func loadTag() {
 	} else if VCS != nil {
 		if VCS.Error == nil {
 			privateTAG = VCS.BranchName
-			inferredBy = ", inferred by git.BranchName."
+			inferredBy = "'', inferred by git.BranchName."
 			return
 		}
 	}
 
-	inferredBy = "<empty>, default environment is 'local'."
+	inferredBy = "'', default environment is 'local'."
 }
 
 // Env returns the current selected environment by

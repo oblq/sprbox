@@ -15,7 +15,10 @@ const banner = `
   ___ ___  ____/ / ___ __ __
  (_-</ _ \/ __/ _ / _ \\ \ /
 /___/ .__/_/ /_.__\___/_\_\ 
-   /_/                      `
+automated  toolbox  factory
+`
+
+///_/                      `
 
 const (
 	structFTag      = "sprbox"
@@ -205,7 +208,7 @@ func PrintInfo(hideBanner bool) {
 			gomsVersion = " v" + boxesRepo.Tag + "(" + boxesRepo.Build + ")"
 		}
 		fmt.Println(darkGrey(banner + " " + gomsVersion))
-		fmt.Println(darkGrey("automated  toolbox  factory\n"))
+		//fmt.Println(darkGrey("automated  toolbox  factory\n"))
 	}
 
 	Env().PrintInfo()
