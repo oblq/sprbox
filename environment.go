@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-// envVar define the name of the environment variable to look for.
+// EnvVarKey define the name of the environment variable to look for.
 const EnvVarKey = "BUILD_ENV"
 
 var (
@@ -31,7 +31,7 @@ var (
 	BUILDENV = ""
 
 	// VCS is the project version control system, by default is nil.
-	VCS *Repository = NewRepository("./")
+	VCS = NewRepository("./")
 
 	privateTAG = ""
 

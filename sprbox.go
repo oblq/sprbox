@@ -182,7 +182,7 @@ func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
 }
 
 func loadConfig(configPath string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
-	if _, canLoad := v.Interface().(boxable); canLoad {
+	if _, isBoxable := v.Interface().(boxable); isBoxable {
 		err := v.Interface().(boxable).Go2Box(configPath)
 		printLoadResult(f, t, err)
 		return err

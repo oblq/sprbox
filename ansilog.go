@@ -5,6 +5,7 @@ import (
 	"reflect"
 )
 
+// ColoredLog enable or disable colors in console.
 var ColoredLog = true
 
 type color string
