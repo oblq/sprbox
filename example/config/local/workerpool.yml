@@ -1,0 +1,2 @@
+max_queue_size: 0 # 0 = default value (10000)
+workers: 8 # 0 = default value (runtime.NumCPU())
