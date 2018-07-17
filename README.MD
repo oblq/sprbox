@@ -4,15 +4,12 @@
 [![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
 [![Coverage Status](https://coveralls.io/repos/github/oblq/sprbox/badge.svg?branch=master)](https://coveralls.io/github/oblq/sprbox?branch=master)
 [![dependencies Status](https://img.shields.io/badge/dependencies-none-brightgreen.svg)](https://travis-ci.org/oblq/sprbox)
-[![version](https://img.shields.io/badge/version-1.0.0-yellow.svg)](https://github.com/oblq/sprbox)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
-
-
 
 **SpareBox** is a toolbox factory with automatic package configuration based on your build environment.
 
 Given your toolbox struct, composed by compatible packages (see the `boxable` interface):  
-```
+```go
 type MyToolBox struct {
 	WPool workerful.Workerful `sprbox:"workerpool.yml"`
 
@@ -40,12 +37,10 @@ var ToolBox MyToolBox
      
 You can init and configure it in one line of code:
 
-
-
-
-```
+```go
 sprbox.InitAndConfig(&ToolBox, "path/to/config")
 ```
+
 ...and the result is:
 
 ![loading](./starting.png)
@@ -61,7 +56,7 @@ go get -u github.com/oblq/sprbox
 
 Start using your package in `sprbox` is simple, you just have to implement the `boxable` interface to automatically parse the config file:
 
-```
+```go
 type boxable interface {
 	Go2Box(string) error
 }
@@ -69,7 +64,7 @@ type boxable interface {
 
 For instance:
 
-```
+```go
 type MyPackage struct {
 	Something string `yaml:"something"`
 }
@@ -92,7 +87,7 @@ Remember to add `sprbox` in your repo topics if you like it.
 SpareBox support the five standard build environment (local, testing, development, staging and production) and automatically select the right config file based on a tag, using RegEx to match it.
 
 Every environment has a set of patterns and they can be edited:
-```
+```go
 sprbox.Staging.SetExps([]string{"feature/f1", "feature/f2"})
 sprbox.Testing.AppendExp("feature/f*")
 match := sprbox.Testing.MatchTag("feature/f5")
