@@ -53,7 +53,7 @@ go get -u github.com/oblq/sprbox
 
 ## Conforming your package
 
-To start using your package in `sprbox` is simple, you just have to implement the `boxable` interface to automatically parse the config file:
+To start using your package in `sprbox` you just need to implement the `boxable` interface:
 
 ```go
 type boxable interface {
