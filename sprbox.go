@@ -214,8 +214,5 @@ func PrintInfo(hideBanner bool) {
 	}
 
 	Env().PrintInfo()
-
-	if VCS != nil {
-		VCS.PrintInfo()
-	}
+	VCS.PrintInfo()
 }
