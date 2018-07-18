@@ -137,8 +137,7 @@ Optionally you can:
 `sprbox.Env().PrintInfo()`
 
 - Get the SpareBox path and/or the sub-path for the current build environment and also use it for any kind of static file related to a specific build environment.  
-`sprbox.Path // -> "path/to/config"`  
-`sprbox.SubPathByEnv(sprbox.Path) // -> "path/to/config/<environment>"`
+`sprbox.SubPathByEnv("path") // -> "path/<environment>"`
 
 ## Compatible tools
 
