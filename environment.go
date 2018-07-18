@@ -79,7 +79,7 @@ func loadTag() {
 }
 
 // Env returns the current selected environment by
-// matching the 'BUILDENV' variable against the environments RegEx.
+// matching the privateTAG variable against the environments RegEx.
 func Env() *Environment {
 	loadTag()
 	switch {

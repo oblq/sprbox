@@ -60,9 +60,6 @@ func (r *Repository) git(params ...string) (string, error) {
 	}
 
 	out := strings.TrimSuffix(string(output), "\n")
-	if len(out) == 0 {
-		out = "-"
-	}
 	return out, nil
 }
 

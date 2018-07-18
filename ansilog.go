@@ -14,22 +14,12 @@ type color string
 const (
 	defaultFG color = "39"
 
-	//blackCol color = "97" // inverted with white
-	redCol     color = "31"
-	greenCol   color = "32"
-	yellowCol  color = "33"
-	blueCol    color = "34"
-	magentaCol color = "35"
-	//cyanCol         color = "36"
-	//lightGreyCol    color = "37"
+	redCol      color = "31"
+	greenCol    color = "32"
+	yellowCol   color = "33"
+	blueCol     color = "34"
+	magentaCol  color = "35"
 	darkGreyCol color = "90"
-	//lightRedCol     color = "91"
-	//lightGreenCol   color = "92"
-	//lightYellowCol  color = "93"
-	//lightBlueCol    color = "94"
-	//lightMagentaCol color = "95"
-	//lightCyanCol    color = "96"
-	//whiteCol        color = "30" // inverted with black
 
 	esc   = "\033["
 	clear = "\033[0m"
@@ -41,11 +31,6 @@ type painter func(interface{}) string
 func def(arg interface{}) string {
 	return colorize(fmt.Sprint(arg), defaultFG)
 }
-
-// Black return the argument as a color escaped string
-//func black(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), blackCol)
-//}
 
 // Red return the argument as a color escaped string
 func red(arg interface{}) string {
@@ -72,55 +57,10 @@ func magenta(arg interface{}) string {
 	return colorize(fmt.Sprint(arg), magentaCol)
 }
 
-// Cyan return the argument as a color escaped string
-//func cyan(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), cyanCol)
-//}
-
-// LightGrey return the argument as a color escaped string
-//func lightGrey(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightGreyCol)
-//}
-
 // DarkGrey return the argument as a color escaped string
 func darkGrey(arg interface{}) string {
 	return colorize(fmt.Sprint(arg), darkGreyCol)
 }
-
-// LightRed return the argument as a color escaped string
-//func lightRed(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightRedCol)
-//}
-
-// LightGreen return the argument as a color escaped string
-//func lightGreen(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightGreenCol)
-//}
-
-// LightYellow return the argument as a color escaped string
-//func lightYellow(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightYellowCol)
-//}
-
-// LightBlue return the argument as a color escaped string
-//func lightBlue(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightBlueCol)
-//}
-
-// LightMagenta return the argument as a color escaped string
-//func lightMagenta(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightMagentaCol)
-//}
-
-// LightCyan return the argument as a color escaped string
-//func lightCyan(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), lightCyanCol)
-//}
-
-// White return the argument as a color escaped string
-//func white(arg interface{}) string {
-//	return colorize(fmt.Sprint(arg), whiteCol)
-//}
 
 // colored return the ANSI colored formatted string.
 func colorize(arg string, color color) string {

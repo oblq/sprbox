@@ -26,7 +26,6 @@ const (
 
 var debug = false
 
-// errors
 var (
 	errNotAStructPointer = errors.New("<box> must be a pointer to a struct")
 
@@ -82,7 +81,6 @@ func InitAndConfig(box interface{}, path string) error {
 	return err
 }
 
-// recursive init and config
 func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflect.Value) error {
 	switch t.Kind() {
 	case reflect.Ptr:
@@ -103,19 +101,6 @@ func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 			return err
 		}
 
-		// Recursive
-		//t = t.Elem()
-		//v = v.Elem()
-		//
-		//if t.Kind() == reflect.Struct {
-		//	fields := v.NumField()
-		//	for i := 0; i < fields; i++ {
-		//		ft := t.Field(i)
-		//		fv := v.Field(i)
-		//		return initBox(configPath, &ft, ft.Type, fv)
-		//	}
-		//}
-
 	case reflect.Struct:
 		debugPrintf("Struct %#v\n", v)
 
@@ -130,14 +115,6 @@ func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 			return err
 		}
 		v.Set(newV.Elem())
-
-		// Recursive
-		//fields := v.NumField()
-		//for i := 0; i < fields; i++ {
-		//	ft := t.Field(i)
-		//	fv := v.Field(i)
-		//	return initBox(configPath, &ft, ft.Type, fv)
-		//}
 
 	default:
 		break
@@ -190,7 +167,7 @@ func PrintInfo(hideBanner bool) {
 		if sprboxRepo.Error == nil {
 			gomsVersion = "v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
 		} else {
-			println(sprboxRepo.Error)
+			println(sprboxRepo.Error.Error())
 		}
 		fmt.Printf(darkGrey(banner), gomsVersion)
 	}
