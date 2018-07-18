@@ -2,6 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
 [![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
+[![Go Report Card](https://goreportcard.com/badge/github.com/oblq/sprbox)](https://goreportcard.com/report/github.com/oblq/sprbox)
 ![dependencies Status](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
@@ -91,7 +92,7 @@ sprbox.Staging.SetExps([]string{"feature/f1", "feature/f2"})
 sprbox.Testing.AppendExp("feature/f*")
 match := sprbox.Testing.MatchTag("feature/f5")
 ```  
-SpareBox can obtain the tag in three different ways, in a precise order, if one can't be determined SpareBox will check the next one:
+SpareBox can obtain the tag in three different ways, in a precise order, if one can't be determined it will check the next one:
 
 1. The `BUILDENV` var in sprbox package (`sprbox.BUILDENV`).  
 Can be defined by code or, since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
@@ -134,8 +135,9 @@ Optionally you can:
 `sprbox.Env().String()`  
 `sprbox.Env().PrintInfo()`
 
-- Get the config path for the current build environment and using it for any kind of static file related to a specific build environment. 
-`sprbox.ConfigPathByEnv("path/to/config") // -> "path/to/config/<environment>"`
+- Get the SpareBox path and/or the sub-path for the current build environment and also use it for any kind of static file related to a specific build environment.  
+`sprbox.Path // -> "path/to/config"`  
+`sprbox.SubPathByEnv(sprbox.Path) // -> "path/to/config/<environment>"`
 
 ## Compatible tools
 

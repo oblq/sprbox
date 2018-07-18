@@ -10,14 +10,14 @@ import (
 
 // Echo ----------------------------------------------------------------------------------------------------------------
 
-func Home(c echo.Context) error {
+func home(c echo.Context) error {
 	app := c.(*CEC).App
-	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool.GetText())
+	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool.getText())
 }
 
-func Text(c echo.Context) error {
+func text(c echo.Context) error {
 	app := c.(*CEC).App
-	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool2.GetText())
+	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool2.getText())
 }
 
 // Pool ----------------------------------------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ type CustomJob struct {
 	ID int
 }
 
-// Execute execute the job
+// F execute execute the job
 func (cj CustomJob) F() error {
 	time.Sleep(time.Second)
 	println("job", cj.ID, "executed...")
@@ -35,11 +35,11 @@ func (cj CustomJob) F() error {
 }
 
 // DoSomeJobs will use App.workerpool, initialized and configured by sprbox
-func DoSomeJobs(c echo.Context) error {
+func doSomeJobs(c echo.Context) error {
 	app := c.(*CEC).App
 	jobsNum := 24
 	i := 0
-	for i < int(jobsNum) {
+	for i < jobsNum {
 		app.WPool.PushJobAsync(CustomJob{i})
 		i++
 	}

@@ -35,8 +35,6 @@ var (
 
 	privateTAG = ""
 
-	configPath = ""
-
 	envLog = kvLogger{}
 )
 
@@ -100,8 +98,8 @@ func Env() *Environment {
 	}
 }
 
-// ConfigPathByEnv returns <path>/<environment>
-func ConfigPathByEnv(path string) string {
+// SubPathByEnv returns <path>/<environment>
+func SubPathByEnv(path string) string {
 	return filepath.Join(path, Env().String())
 }
 

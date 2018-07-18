@@ -54,11 +54,14 @@ type boxable interface {
 	Go2Box(string) error
 }
 
+// Path is the config path passed in InitAndConfig
+var Path = ""
+
 // InitAndConfig initialize and configure the passed struct
 // looking for the config files in the passed path.
-func InitAndConfig(box interface{}, config string) error {
+func InitAndConfig(box interface{}, path string) error {
 
-	configPath = config
+	Path = path
 
 	t := reflect.TypeOf(box).Elem()
 	v := reflect.ValueOf(box).Elem()
@@ -69,18 +72,16 @@ func InitAndConfig(box interface{}, config string) error {
 		return errInvalidPointer
 	}
 
-	configPath = ConfigPathByEnv(configPath)
-
 	debugPrintf("ORIGINAL BOX: %#v\n", box)
 	printLoadHeader()
 	var err error
-	if _, pluggable := reflect.ValueOf(box).Interface().(boxable); pluggable {
-		err = initBox(configPath, nil, t, v)
+	if _, isBoxable := reflect.ValueOf(box).Interface().(boxable); isBoxable {
+		err = initBox(SubPathByEnv(Path), nil, t, v)
 	} else {
 		for i := 0; i < v.NumField(); i++ {
 			ft := t.Field(i)
 			fv := v.Field(i)
-			err = initBox(configPath, &ft, ft.Type, fv)
+			err = initBox(SubPathByEnv(Path), &ft, ft.Type, fv)
 		}
 	}
 	debugPrintf("INITIALIZED BOX: %#v\n", v)
@@ -182,14 +183,13 @@ func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
 }
 
 func loadConfig(configPath string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
-	if _, isBoxable := v.Interface().(boxable); isBoxable {
-		err := v.Interface().(boxable).Go2Box(configPath)
-		printLoadResult(f, t, err)
-		return err
-	} else {
+	if _, isBoxable := v.Interface().(boxable); !isBoxable {
 		printLoadResult(f, t, errNoBoxable)
+		return nil
 	}
-	return nil
+	err := v.Interface().(boxable).Go2Box(configPath)
+	printLoadResult(f, t, err)
+	return err
 }
 
 func debugPrintf(format string, args ...interface{}) {

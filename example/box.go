@@ -24,6 +24,7 @@ type AppToolBox struct {
 	AnOmittedTool Tool `sprbox:"omit"`
 }
 
+// App is the app toolbox
 var App AppToolBox
 
 func init() {
@@ -66,6 +67,7 @@ func init() {
 	// From here on you can grab your libs, fully initialized and configured.
 }
 
+// CEC is a custom echo context
 type CEC struct {
 	echo.Context
 	App *AppToolBox

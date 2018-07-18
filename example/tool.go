@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Tool1 is a struct example that .
+// Tool is a struct example that .
 type Tool struct {
 	Text string `yaml:"text"`
 }
@@ -22,6 +22,6 @@ func (t *Tool) Go2Box(configPath string) error {
 	return nil
 }
 
-func (t *Tool) GetText() string {
+func (t *Tool) getText() string {
 	return t.Text
 }
