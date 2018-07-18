@@ -1,6 +1,9 @@
 package sprbox
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestEnvironment(t *testing.T) {
 	BUILDENV = Local.String()
@@ -28,9 +31,27 @@ func TestEnvironment(t *testing.T) {
 		t.Error("Development environment not matched")
 	}
 
+	BUILDENV = ""
+	os.Setenv(EnvVarKey, "")
+	VCS = nil
+
+	Env().PrintInfo()
+
+	os.Setenv(EnvVarKey, "staging")
+	if Env() != Staging {
+		t.Error("Staging environment not matched")
+	}
+
+	println(Env().Info())
+
 	// RegEx test
 	Production.AppendExp("branch/*")
 	if !Production.MatchTag("branch/test") {
+		t.Error("error in RegEx matcher...")
+	}
+
+	Production.SetExps([]string{"test*"})
+	if !Production.MatchTag("test1") {
 		t.Error("error in RegEx matcher...")
 	}
 }

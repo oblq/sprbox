@@ -12,7 +12,7 @@ type color string
 
 // Color ANSI codes
 const (
-	//defaultFG color = "39"
+	defaultFG color = "39"
 
 	//blackCol color = "97" // inverted with white
 	redCol     color = "31"
@@ -36,6 +36,11 @@ const (
 )
 
 type painter func(interface{}) string
+
+// Black return the argument as a color escaped string
+func def(arg interface{}) string {
+	return colorize(fmt.Sprint(arg), defaultFG)
+}
 
 // Black return the argument as a color escaped string
 //func black(arg interface{}) string {
@@ -133,13 +138,6 @@ type kvLogger struct {
 	ValuePainter painter
 }
 
-// Print print the key with predefined KeyColor and width
-// and the value with the predefined ValueColor.
-func (kv *kvLogger) Print(key interface{}, value interface{}) {
-	k, v := kv.ansify(key, value)
-	fmt.Printf("%v%v", k, v)
-}
-
 // Println print the key with predefined KeyColor and KeyMaxWidth
 // and the value with the predefined ValueColor.
 func (kv *kvLogger) Println(key interface{}, value interface{}) {
@@ -152,9 +150,11 @@ func (kv *kvLogger) ansify(key interface{}, value interface{}) (string, string) 
 
 	k = fmt.Sprintf("%-20v", key)
 
-	if kv.KeyPainter != nil {
-		k = kv.KeyPainter(k)
+	if kv.KeyPainter == nil {
+		kv.KeyPainter = def
 	}
+
+	k = kv.KeyPainter(k)
 
 	if kv.ValuePainter != nil {
 		v = kv.ValuePainter(value)

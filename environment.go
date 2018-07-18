@@ -62,20 +62,20 @@ var inferredBy string
 func loadTag() {
 	if len(BUILDENV) > 0 {
 		privateTAG = BUILDENV
-		inferredBy = ", inferred from 'BUILDENV' var, set manually."
+		inferredBy = fmt.Sprintf("'%s', inferred from 'BUILDENV' var, set manually.", privateTAG)
 		return
 	} else if privateTAG = os.Getenv(EnvVarKey); len(privateTAG) > 0 {
-		inferredBy = fmt.Sprintf(", inferred from '%s' environment variable.", EnvVarKey)
+		inferredBy = fmt.Sprintf("'%s', inferred from '%s' environment variable.", privateTAG, EnvVarKey)
 		return
 	} else if VCS != nil {
 		if VCS.Error == nil {
 			privateTAG = VCS.BranchName
-			inferredBy = "'', inferred from git.BranchName."
+			inferredBy = "<empty>, inferred from git.BranchName."
 			return
 		}
 	}
 
-	inferredBy = "'', default environment is 'local'."
+	inferredBy = "<empty>, default environment is 'local'."
 }
 
 // Env returns the current selected environment by

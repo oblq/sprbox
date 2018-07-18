@@ -68,6 +68,9 @@ func (r *Repository) git(params ...string) (string, error) {
 
 // PrintInfo print git data in console.
 func (r *Repository) PrintInfo() {
+	if r == nil {
+		return
+	}
 	gitLog.Println("Git Branch:", r.BranchName)
 	gitLog.Println("Git Commit:", r.Commit)
 	gitLog.Println("Git Build:", r.Build)

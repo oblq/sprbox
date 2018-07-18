@@ -15,10 +15,9 @@ const banner = `
   ___ ___  ____/ / ___ __ __
  (_-</ _ \/ __/ _ / _ \\ \ /
 /___/ .__/_/ /_.__\___/_\_\  %s
-`
+env/_/aware toolbox factory
 
-//   /_/
-//`
+`
 
 const (
 	structFTag      = "sprbox"
@@ -94,11 +93,6 @@ func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 			break
 		}
 
-		if !v.IsValid() || !v.CanSet() {
-			debugPrintf("Ptr: invalid or can't be set: %#v. IsValid(): %v - CanSet(): %v\n", v, v.IsValid(), v.CanSet())
-			break
-		}
-
 		if v.IsNil() {
 			debugPrintf("Ptr was nil\n")
 			newV := reflect.New(t.Elem())
@@ -127,11 +121,6 @@ func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 
 		configFile, omit := lookupTags(f)
 		if omit {
-			break
-		}
-
-		if !v.IsValid() || !v.CanSet() {
-			debugPrintf("Struct: invalid or can't be set: %#v. IsValid(): %v - CanSet(): %v\n", v, v.IsValid(), v.CanSet())
 			break
 		}
 
@@ -199,12 +188,11 @@ func PrintInfo(hideBanner bool) {
 		gomsVersion := ""
 		sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
 		if sprboxRepo.Error == nil {
-			gomsVersion = " v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
+			gomsVersion = "v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
 		} else {
 			println(sprboxRepo.Error)
 		}
 		fmt.Printf(darkGrey(banner), gomsVersion)
-		fmt.Println(darkGrey("build-environment aware toolbox factory\n"))
 	}
 
 	Env().PrintInfo()

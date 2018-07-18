@@ -42,6 +42,7 @@ type Box struct {
 }
 
 func TestBox(t *testing.T) {
+	PrintInfo(false)
 	var test Box
 	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
 		t.Error(err)
@@ -88,6 +89,7 @@ type BoxNil struct {
 }
 
 func TestNilBox(t *testing.T) {
+	ColoredLog = false
 	var test1 BoxNil
 	if err := InitAndConfig(&test1, "testConfigPath"); err != nil {
 		t.Error(err)
@@ -179,5 +181,32 @@ func TestBoxAfterConfig(t *testing.T) {
 	}
 	if test.Tool2.ConfigPath != tString {
 		t.Error("test2.ConfigPath:", test.Tool2.ConfigPath)
+	}
+}
+
+func TestNotAStructErr(t *testing.T) {
+	test := []string{"test"}
+	if err := InitAndConfig(&test, "testConfigPath"); err != errNotAStructPointer {
+		t.Error(err)
+	}
+}
+
+// TestBoxError is a struct implementing 'autobox' interface.
+type ToolNotAStruct []string
+
+// Go2Box is the 'autobox' interface implementation.
+func (c *ToolNotAStruct) Go2Box(configPath string) error {
+	return nil
+}
+
+type BoxNotAStructTool struct {
+	NotAStruct ToolNotAStruct
+}
+
+func TestToolNotAStruct(t *testing.T) {
+	debug = true
+	var test BoxNotAStructTool
+	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+		t.Error(err)
 	}
 }
