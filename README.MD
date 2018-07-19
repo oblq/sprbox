@@ -31,7 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you need to also load a configuration file your struct must implement the [`configurable`](#using-your-package-in-sprbox)  interface:  
+2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you also need to load a configuration file your struct must implement the [configurable](#using-your-package-in-sprbox)  interface:  
     ```go
     type MyToolBox struct {
         WPool workerful.Workerful `sprbox:"workerpool.yml"`
@@ -48,14 +48,16 @@ go get -u github.com/oblq/sprbox
     var ToolBox MyToolBox
     ```
 
-3. Init and configure the toolbox in one line.  
+3. Define the build [environment](#the-build-environment).
+
+4. Init and configure the toolbox in one line.  
 The right config file will be automatically picked from the right `./config/<environment>` subfolder:  
     ```go
     sprbox.PrintInfo(false) // optionally
     sprbox.InitAndConfig(&ToolBox, "./config")
     ```
 
-4. ...and the result is:  
+5. ...and the result is:  
 ![loading](./infoscreen.png)
 
 ## The build environment
