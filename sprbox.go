@@ -20,11 +20,11 @@ env/_/aware toolbox factory
 `
 
 const (
-	debug = false
-
 	structFTag      = "sprbox"
 	structFTagVOmit = "omit"
 )
+
+var debug = false
 
 var (
 	errNotAStructPointer = errors.New("<box> must be a pointer to a struct")
