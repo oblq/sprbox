@@ -31,8 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox composed by [`boxable`](#using-your-package-in-sprbox) elements (see the [`boxable`](#using-your-package-in-sprbox) interface) 
-:  
+2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you need to also load a configuration file your struct must implement the [`boxable`](#using-your-package-in-sprbox)  interface:  
     ```go
     type MyToolBox struct {
         WPool workerful.Workerful `sprbox:"workerpool.yml"`
@@ -148,6 +147,23 @@ func (mp *MyPackage) Go2Box(configPath string) error {
 }
 ```
 
+You can put tags in your struct fields to explicit the config file's name or to omit a specific field:
+```go
+type MyToolBox struct {
+    // By default sprbox will look for a file named like the 
+    // struct field name (ATool.yml, case insensitive).
+    ATool    Tool
+    
+    // ...or you can specify the file name:
+    WPool workerful.Workerful `sprbox:"workerpool.yml"`
+
+    // ...or you can skip initialization and initialize and or configure it later by code.
+    AnOmittedTool Tool `sprbox:"omit"`
+}
+
+var ToolBox MyToolBox
+```
+    
 Add `sprbox` in your repo topics if you like it.
 
 ## Examples

@@ -106,7 +106,7 @@ func (kv *kvLogger) ansify(key interface{}, value interface{}) (string, string) 
 }
 
 func printLoadHeader() {
-	fmt.Printf("%-16v | %-28v | Result\n", "Field name", "Type")
+	fmt.Printf("%-16v | %-28v | Config\n", "Field name", "Type")
 	fmt.Println("----------------------------------------------------------------")
 
 }
