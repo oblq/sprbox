@@ -48,8 +48,8 @@ var (
 	errNoBoxable = errors.New(`does not implement the 'boxable' interface: Go2Box(string) error`)
 )
 
-type boxable interface {
-	Go2Box(string) error
+type configurable interface {
+	SBConfig(string) error
 }
 
 // InitAndConfig initialize and configure the passed struct
@@ -67,7 +67,7 @@ func InitAndConfig(box interface{}, path string) error {
 	debugPrintf("ORIGINAL BOX: %#v\n", box)
 	printLoadHeader()
 	var err error
-	if _, isBoxable := reflect.ValueOf(box).Interface().(boxable); isBoxable {
+	if _, isConfigurable := reflect.ValueOf(box).Interface().(configurable); isConfigurable {
 		err = initBox(SubPathByEnv(path), nil, t, v)
 	} else {
 		for i := 0; i < v.NumField(); i++ {
@@ -143,11 +143,11 @@ func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
 }
 
 func loadConfig(configPath string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
-	if _, isBoxable := v.Interface().(boxable); !isBoxable {
+	if _, isConfigurable := v.Interface().(configurable); !isConfigurable {
 		printLoadResult(f, t, errNoBoxable)
 		return nil
 	}
-	err := v.Interface().(boxable).Go2Box(configPath)
+	err := v.Interface().(configurable).SBConfig(configPath)
 	printLoadResult(f, t, err)
 	return err
 }

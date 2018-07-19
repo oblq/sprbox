@@ -14,7 +14,7 @@ type Tool struct {
 }
 
 // Go2Box is the 'autobox' interface implementation.
-func (c *Tool) Go2Box(configPath string) error {
+func (c *Tool) SBConfig(configPath string) error {
 	c.ConfigPath = configPath
 	return nil
 }
@@ -24,21 +24,21 @@ type ToolError struct {
 	ConfigPath string
 }
 
-// Go2Box is the 'autobox' interface implementation.
-func (c *ToolError) Go2Box(configPath string) error {
+// SBConfig is the 'autobox' interface implementation.
+func (c *ToolError) SBConfig(configPath string) error {
 	return errors.New("fake error for test")
 }
 
 // TestBoxError is a struct implementing 'autobox' interface.
-type ToolNoAutobox struct {
+type ToolNoSBConfig struct {
 	ConfigPath string
 }
 
 type Box struct {
-	Tool             Tool
-	PTRTool          *Tool
-	ToolNoAutobox    ToolNoAutobox
-	PTRToolNoAutobox *ToolNoAutobox
+	Tool              Tool
+	PTRTool           *Tool
+	ToolNoSBConfig    ToolNoSBConfig
+	PTRToolNoSBConfig *ToolNoSBConfig
 }
 
 func TestBox(t *testing.T) {
@@ -53,11 +53,11 @@ func TestBox(t *testing.T) {
 	if len(test.PTRTool.ConfigPath) == 0 {
 		t.Error("test.PTRTool.ConfigPath is empty")
 	}
-	if len(test.ToolNoAutobox.ConfigPath) > 0 {
-		t.Error("test.ToolNoAutobox.ConfigPath:", test.ToolNoAutobox.ConfigPath)
+	if len(test.ToolNoSBConfig.ConfigPath) > 0 {
+		t.Error("test.ToolNoAutobox.ConfigPath:", test.ToolNoSBConfig.ConfigPath)
 	}
-	if len(test.PTRToolNoAutobox.ConfigPath) > 0 {
-		t.Error("test.PTRToolNoAutobox.ConfigPath:", test.PTRToolNoAutobox.ConfigPath)
+	if len(test.PTRToolNoSBConfig.ConfigPath) > 0 {
+		t.Error("test.PTRToolNoAutobox.ConfigPath:", test.PTRToolNoSBConfig.ConfigPath)
 	}
 }
 
@@ -195,7 +195,7 @@ func TestNotAStructErr(t *testing.T) {
 type ToolNotAStruct []string
 
 // Go2Box is the 'autobox' interface implementation.
-func (c *ToolNotAStruct) Go2Box(configPath string) error {
+func (c *ToolNotAStruct) SBConfig(configPath string) error {
 	return nil
 }
 

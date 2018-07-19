@@ -31,7 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you need to also load a configuration file your struct must implement the [`boxable`](#using-your-package-in-sprbox)  interface:  
+2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you need to also load a configuration file your struct must implement the [`configurable`](#using-your-package-in-sprbox)  interface:  
     ```go
     type MyToolBox struct {
         WPool workerful.Workerful `sprbox:"workerpool.yml"`
@@ -121,11 +121,11 @@ sprbox.SubPathByEnv("static") // -> "static/<environment>"
 
 ## Using your package in sprbox
 
-To start using your package in `sprbox` you just need to implement the `boxable` interface:
+To start using your package in `sprbox` you just need to implement the `configurable` interface:
 
 ```go
-type boxable interface {
-	Go2Box(string) error
+type configurable interface {
+	SBConfig(string) error
 }
 ```
 
@@ -136,8 +136,8 @@ type MyPackage struct {
 	Something string `yaml:"something"`
 }
 
-// Go2Box is the sprbox 'boxable' interface implementation.
-func (mp *MyPackage) Go2Box(configPath string) error {
+// SBConfig is the sprbox 'configurable' interface implementation.
+func (mp *MyPackage) SBConfig(configPath string) error {
 	if configFile, err := ioutil.ReadFile(configPath); err != nil {
 		return fmt.Errorf("wrong config path: %s", err.Error())
 	} else if err = yaml.Unmarshal(configFile, mp); err != nil {

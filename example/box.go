@@ -15,8 +15,8 @@ type Tool struct {
 	Text string `yaml:"text"`
 }
 
-// Go2Box is the https://github.com/oblq/sprbox 'boxable' interface implementation.
-func (t *Tool) Go2Box(configPath string) error {
+// SBConfig is the https://github.com/oblq/sprbox 'boxable' interface implementation.
+func (t *Tool) SBConfig(configPath string) error {
 	if compsConfigFile, err := ioutil.ReadFile(configPath); err != nil {
 		return fmt.Errorf("wrong config path: %s", err.Error())
 	} else if err = yaml.Unmarshal(compsConfigFile, t); err != nil {
