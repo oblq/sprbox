@@ -31,7 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox composed by [`boxable`](./#Using-your-package-in-sprbox) elements (see the [`boxable`](./#Using-your-package-in-sprbox) interface) 
+2. Define your toolbox composed by [`boxable`](#Using-your-package-in-sprbox) elements (see the [`boxable`](#Using-your-package-in-sprbox) interface) 
 :  
     ```go
     type MyToolBox struct {
@@ -49,10 +49,11 @@ go get -u github.com/oblq/sprbox
     var ToolBox MyToolBox
     ```
 
-3. Init and configure the toolbox for the right build environment in one line:  
+3. Init and configure the toolbox in one line.  
+The right config file will be automatically picked from the right `./config/<environment>` subfolder:  
     ```go
     sprbox.PrintInfo(false) // optionally
-    sprbox.InitAndConfig(&ToolBox, "path/to/config")
+    sprbox.InitAndConfig(&ToolBox, "./config")
     ```
 
 4. ...and the result is:  
