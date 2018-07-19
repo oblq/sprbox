@@ -31,7 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox composed by [`boxable`](#Using-your-package-in-sprbox) elements (see the [`boxable`](#Using-your-package-in-sprbox) interface) 
+2. Define your toolbox composed by [`boxable`](#using-your-package-in-sprbox) elements (see the [`boxable`](#using-your-package-in-sprbox) interface) 
 :  
     ```go
     type MyToolBox struct {
@@ -161,6 +161,6 @@ Add `sprbox` in your repo topics if you like it.
 
 - [Marco Muratori](mailto:marcomrtr@gmail.com) 
 
-## License
+##License
 
 Workerful is available under the MIT license. See the [LICENSE](./LICENSE) file for more information.
