@@ -15,7 +15,7 @@ type Tool struct {
 	Text string `yaml:"text"`
 }
 
-// SBConfig is the https://github.com/oblq/sprbox 'boxable' interface implementation.
+// SBConfig is the https://github.com/oblq/sprbox 'configurable' interface implementation.
 func (t *Tool) SBConfig(configPath string) error {
 	if compsConfigFile, err := ioutil.ReadFile(configPath); err != nil {
 		return fmt.Errorf("wrong config path: %s", err.Error())
@@ -31,7 +31,7 @@ func (t *Tool) getText() string {
 
 // AppToolBox is the struct to initialize with sprbox.
 // It contains pluggable libraries, implementing the
-// 'boxable' interface: func Go2Box(configPath string) error.
+// 'configurable' interface: func SBConfig(configPath string) error.
 type AppToolBox struct {
 	WPool workerful.Workerful `sprbox:"workerpool.yml"`
 
@@ -43,7 +43,7 @@ type AppToolBox struct {
 	// Optionally pass a config file name in the tag.
 	ATool2 Tool
 
-	NotBoxable struct{ Text string }
+	NotConfigurable struct{ Text string }
 
 	// Optionally add the 'omit' value so sprbox will skip that field.
 	AnOmittedTool Tool `sprbox:"omit"`

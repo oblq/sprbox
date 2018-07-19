@@ -45,7 +45,7 @@ var (
 
 	errOmit = errors.New("omitted")
 
-	errNoBoxable = errors.New(`does not implement the 'boxable' interface: Go2Box(string) error`)
+	errNoConfigurable = errors.New(`does not implement the 'configurable' interface: SBConfig(string) error`)
 )
 
 type configurable interface {
@@ -144,7 +144,7 @@ func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
 
 func loadConfig(configPath string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
 	if _, isConfigurable := v.Interface().(configurable); !isConfigurable {
-		printLoadResult(f, t, errNoBoxable)
+		printLoadResult(f, t, errNoConfigurable)
 		return nil
 	}
 	err := v.Interface().(configurable).SBConfig(configPath)
@@ -162,14 +162,14 @@ func debugPrintf(format string, args ...interface{}) {
 // the environment and git on init.
 func PrintInfo(hideBanner bool) {
 	if !hideBanner {
-		gomsVersion := ""
+		version := ""
 		sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
 		if sprboxRepo.Error == nil {
-			gomsVersion = "v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
+			version = "v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
 		} else {
 			println(sprboxRepo.Error.Error())
 		}
-		fmt.Printf(darkGrey(banner), gomsVersion)
+		fmt.Printf(darkGrey(banner), version)
 	}
 
 	Env().PrintInfo()

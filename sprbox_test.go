@@ -8,37 +8,37 @@ import (
 
 // add	debug = true for details
 
-// TestBox is a struct implementing 'autobox' interface.
+// Tool is a struct implementing 'configurable' interface.
 type Tool struct {
 	ConfigPath string
 }
 
-// Go2Box is the 'autobox' interface implementation.
+// SBConfig is the 'configurable' interface implementation.
 func (c *Tool) SBConfig(configPath string) error {
 	c.ConfigPath = configPath
 	return nil
 }
 
-// TestBoxError is a struct implementing 'autobox' interface.
+// ToolError is a struct implementing 'configurable' interface.
 type ToolError struct {
 	ConfigPath string
 }
 
-// SBConfig is the 'autobox' interface implementation.
+// SBConfig is the 'configurable' interface implementation.
 func (c *ToolError) SBConfig(configPath string) error {
 	return errors.New("fake error for test")
 }
 
-// TestBoxError is a struct implementing 'autobox' interface.
-type ToolNoSBConfig struct {
+// ToolNoConfigurable is a struct implementing 'configurable' interface.
+type ToolNoConfigurable struct {
 	ConfigPath string
 }
 
 type Box struct {
-	Tool              Tool
-	PTRTool           *Tool
-	ToolNoSBConfig    ToolNoSBConfig
-	PTRToolNoSBConfig *ToolNoSBConfig
+	Tool                  Tool
+	PTRTool               *Tool
+	ToolNoConfigurable    ToolNoConfigurable
+	PTRToolNoConfigurable *ToolNoConfigurable
 }
 
 func TestBox(t *testing.T) {
@@ -53,11 +53,11 @@ func TestBox(t *testing.T) {
 	if len(test.PTRTool.ConfigPath) == 0 {
 		t.Error("test.PTRTool.ConfigPath is empty")
 	}
-	if len(test.ToolNoSBConfig.ConfigPath) > 0 {
-		t.Error("test.ToolNoAutobox.ConfigPath:", test.ToolNoSBConfig.ConfigPath)
+	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
+		t.Error("test.ToolNoConfigurable.ConfigPath:", test.ToolNoConfigurable.ConfigPath)
 	}
-	if len(test.PTRToolNoSBConfig.ConfigPath) > 0 {
-		t.Error("test.PTRToolNoAutobox.ConfigPath:", test.PTRToolNoSBConfig.ConfigPath)
+	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
+		t.Error("test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 	}
 }
 
@@ -191,10 +191,10 @@ func TestNotAStructErr(t *testing.T) {
 	}
 }
 
-// TestBoxError is a struct implementing 'autobox' interface.
+// ToolNotAStruct is a struct implementing 'configurable' interface.
 type ToolNotAStruct []string
 
-// Go2Box is the 'autobox' interface implementation.
+// SBConfig is the 'configurable' interface implementation.
 func (c *ToolNotAStruct) SBConfig(configPath string) error {
 	return nil
 }

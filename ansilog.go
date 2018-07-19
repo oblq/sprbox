@@ -121,7 +121,7 @@ func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
 	if err != nil {
 		if err == errOmit {
 			fmt.Printf("%s | %s | %s\n", blue(objName), objType, err.Error())
-		} else if err == errNoBoxable {
+		} else if err == errNoConfigurable {
 			fmt.Printf("%s | %s | %s\n", blue(objName), objType, yellow("-> "+err.Error()))
 		} else {
 			fmt.Printf("%s | %s | %s\n", blue(objName), objType, red("-> "+err.Error()))

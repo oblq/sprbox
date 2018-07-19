@@ -1,4 +1,4 @@
-// Package sprbox (sparebox) is a toolbox factory
+// Package sprbox (SpareBox) is a toolbox factory
 // with automatic package configuration based on your build environment.
 // It provide a convenient way to handle app state
 // based on the environment.
