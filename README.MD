@@ -162,8 +162,6 @@ type MyToolBox struct {
     // ...or you can skip initialization and initialize and or configure it later by code.
     AnOmittedTool Tool `sprbox:"omit"`
 }
-
-var ToolBox MyToolBox
 ```
     
 Add `sprbox` in your repo topics if you like it.
