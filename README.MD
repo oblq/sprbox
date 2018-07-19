@@ -1,5 +1,6 @@
 # SpareBox 
 
+[![GitHub tag](https://img.shields.io/github/tag/oblq/sprbox.svg)](https://github.com/oblq/sprbox)
 [![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
 [![codecov](https://codecov.io/gh/oblq/sprbox/branch/master/graph/badge.svg)](https://codecov.io/gh/oblq/sprbox)
 [![Go Report Card](https://goreportcard.com/badge/github.com/oblq/sprbox)](https://goreportcard.com/report/github.com/oblq/sprbox)
@@ -7,53 +8,118 @@
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
+
+
 **SpareBox** is a toolbox factory with automatic package configuration based on your build environment.
 
-Given your toolbox struct, composed by compatible packages (see the `boxable` interface):  
-```go
-type MyToolBox struct {
-	WPool workerful.Workerful `sprbox:"workerpool.yml"`
+## Installation
 
-	// By default sprbox will look for a file named like the
-	// struct field name (ATool.yml, case insensitive).
-	ATool    Tool
-	AToolPtr *Tool `sprbox:"atool.yml"`
-
-	// ...or you can skip initialization and initialize it later by code
-	AnOmittedTool Tool `sprbox:"omit"`
-}
-
-var ToolBox MyToolBox
+```sh
+go get -u github.com/oblq/sprbox
 ```
 
-...and a config path with a subfolder for every environment you plan to use:
-    
-    ├── MyConfigPath
+## Getting Started
+
+1. In your project, create a config path with a subfolder for every environment you plan to use:  
+    ```
+    ├── config
     │   ├── development
     │   ├── local
     │   ├── production
     │   ├── staging
     │   └── testing
     └── main.go
-     
-You can init and configure it in one line of code:
+    ```
+    
+2. Define your toolbox composed by [`boxable`](./#Using-your-package-in-sprbox) elements (see the [`boxable`](./#Using-your-package-in-sprbox) interface) 
+:  
+    ```go
+    type MyToolBox struct {
+        WPool workerful.Workerful `sprbox:"workerpool.yml"`
+    
+        // By default sprbox will look for a file named like the
+        // struct field name (ATool.yml, case insensitive).
+        ATool    Tool
+        AToolPtr *Tool `sprbox:"atool.yml"`
+    
+        // ...or you can skip initialization and initialize it later by code
+        AnOmittedTool Tool `sprbox:"omit"`
+    }
+    
+    var ToolBox MyToolBox
+    ```
+
+3. Init and configure the toolbox for the right build environment in one line:  
+    ```go
+    sprbox.PrintInfo(false) // optionally
+    sprbox.InitAndConfig(&ToolBox, "path/to/config")
+    ```
+
+4. ...and the result is:  
+![loading](./infoscreen.png)
+
+## The build environment
+
+The build environment is inferred from a ***tag***, using RegEx to match it.  
+SpareBox will try to grab that tag in three different ways, in a precise order, if one can't be determined it will check for the next one:
+
+1. The `BUILDENV` var in sprbox package, which can be defined by code:
+    ```go
+    sprbox.BUILDENV = "dev"
+    ```
+    ...or, since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
+    ```bash
+    LDFLAGS="-X ${GOPATH:-$HOME/go}/src/github.com/oblq/sprbox.BUILDENV=develop"
+    go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api
+    ```
+
+2. The environment variable `BUILD_ENV`:
+    ```go
+    os.Setenv(sprbox.EnvVarKey, "dev")
+    ```
+
+3. The branch name (Gitflow for CI/CD are supported).  
+By default the working dir is used, you can pass a different git repository path for this:  
+    ```go
+    sprbox.VCS = sprbox.NewRepository("path/to/repo")
+    println(sprbox.VCS.BranchName) // Commit, Tag, Build, Path and Error
+    sprbox.VCS.PrintInfo()
+    ```  
+
+Every environment has a set of default patterns:
+
+```
+Production  = []string{"production", "master"}
+Staging     = []string{"staging", "release/*", "hotfix/*"}
+Testing     = []string{"testing", "test", "feature/*"}
+Development = []string{"development", "develop", "dev"}
+Local       = []string{"local"}
+```
+
+...and they can be edited:
 
 ```go
-sprbox.InitAndConfig(&ToolBox, "path/to/config")
+sprbox.Testing.SetExps([]string{"testing", "test"})
+sprbox.Testing.AppendExp("feature/f*")
+println("matched:", sprbox.Testing.MatchTag("feature/f5"))
+```  
+
+Be able to edit the RegEx means that you can use everything to determine the build env, may be the machine hostname (`cat /etc/hostname`) or whatever you prefer.  
+SpareBox will grab the correct config file for any given build environment.  
+
+Finally you can check the current env in code with:
+
+```go
+if sprbox.Env() == sprbox.Production { 
+	doSomething() 
+}
+println(sprbox.Env().String())
+sprbox.Env().PrintInfo()
+
+sprbox.SubPathByEnv("static") // -> "static/<environment>"
 ```
 
-...and the result is:
-
-![loading](./starting.png)
-
-See the example: [example](example)
-
-## Install
-```sh
-go get -u github.com/oblq/sprbox
-```
-
-## Conforming your package
+## Using your package in sprbox
 
 To start using your package in `sprbox` you just need to implement the `boxable` interface:
 
@@ -81,63 +147,10 @@ func (mp *MyPackage) Go2Box(configPath string) error {
 }
 ```
 
-Remember to add `sprbox` in your repo topics if you like it.
+Add `sprbox` in your repo topics if you like it.
 
-## How it works
-
-SpareBox support the five standard build environment (local, testing, development, staging and production) and automatically select the right config file based on a tag, using RegEx to match it.
-
-Every environment has a set of patterns and they can be edited:
-```go
-sprbox.Staging.SetExps([]string{"feature/f1", "feature/f2"})
-sprbox.Testing.AppendExp("feature/f*")
-match := sprbox.Testing.MatchTag("feature/f5")
-```  
-SpareBox can obtain the tag in three different ways, in a precise order, if one can't be determined it will check the next one:
-
-1. The `BUILDENV` var in sprbox package (`sprbox.BUILDENV`).  
-Can be defined by code or, since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
-`LDFLAGS="-X ${GOPATH:-$HOME/go}/src/github.com/oblq/sprbox.BUILDENV=develop"`  
-`go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api`
-
-2. The environment variable `BUILD_ENV` (`os.GetEnv("BUILD_ENV")`).  
-
-3. The branch name, Git Flow for CI/CD are supported.  
-By default the working dir is used, you can pass a different git repository path for this:  
-`sprbox.VCS = sprbox.NewRepository("path/to/repo")`  
-Then the branch name will be checked against the RegEx patterns for any environment.
-
-The default RegEx pattern are:  
-- `Production 	[]string{"production", "master"}`
-- `Staging 		[]string{"staging", "release/*", "hotfix/*"}`
-- `Testing 	    []string{"testing", "test", "feature/*"}`
-- `Development  []string{"development", "develop", "dev"}`
-- `Local        []string{"local"}`
-	
-SpareBox will grab the correct config file, in the right directory, for the right environment.
-
-Optionally you can:
-- Manually set the environment:  
-`sprbox.BUILDENV = "dev"`  
-..also like this:  
-`err := os.Setenv(sprbox.EnvVarKey, "dev")`
-
-
-- Set a different repository path to automatically select config files based on branch name RegEx matching ...or to simply print git info in console:  
-`sprbox.VCS = sprbox.NewRepository("path/to/repo")`  
-`sprbox.VCS.BranchName // Commit, Tag, Build and Path`  
-`sprbox.VCS.PrintInfo()`
-
-- Print info in console:  
-`sprbox.PrintInfo(false)`
-
-- Get the current environment:  
-`if sprbox.Env() == sprbox.Production { doSomething() }`  
-`sprbox.Env().String()`  
-`sprbox.Env().PrintInfo()`
-
-- Get the SpareBox path and/or the sub-path for the current build environment and also use it for any kind of static file related to a specific build environment.  
-`sprbox.SubPathByEnv("path") // -> "path/<environment>"`
+## Examples
+- [example](example)
 
 ## Compatible tools
 

@@ -40,7 +40,6 @@ func (r *Repository) git(params ...string) (string, error) {
 	}
 
 	cmd := exec.Command(gitBinPath, params...)
-
 	if len(r.Path) > 0 {
 		cmd.Dir = r.Path
 	}
