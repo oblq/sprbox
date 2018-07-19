@@ -177,6 +177,6 @@ Add `sprbox` in your repo topics if you like it.
 
 - [Marco Muratori](mailto:marcomrtr@gmail.com) 
 
-##License
+## License
 
 Workerful is available under the MIT license. See the [LICENSE](./LICENSE) file for more information.
