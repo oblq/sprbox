@@ -31,7 +31,7 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you need to also load a configuration file your struct must implement the [configurable](#using-your-package-in-sprbox)  interface:  
+2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you also need to load a configuration file your struct must implement the [configurable](#using-your-package-in-sprbox)  interface:  
     ```go
     type MyToolBox struct {
         WPool workerful.Workerful `sprbox:"workerpool.yml"`
