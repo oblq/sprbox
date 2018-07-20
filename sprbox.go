@@ -52,9 +52,9 @@ type configurable interface {
 	SBConfig(string) error
 }
 
-// InitAndConfig initialize and (eventually) configure the passed struct
+// Load initialize and (eventually) configure the passed struct
 // looking for the config files in the passed path.
-func InitAndConfig(box interface{}, path string) error {
+func Load(box interface{}, path string) error {
 	t := reflect.TypeOf(box).Elem()
 	v := reflect.ValueOf(box).Elem()
 
@@ -68,12 +68,12 @@ func InitAndConfig(box interface{}, path string) error {
 	printLoadHeader()
 	var err error
 	if _, isConfigurable := reflect.ValueOf(box).Interface().(configurable); isConfigurable {
-		err = initBox(SubPathByEnv(path), nil, t, v)
+		err = loadBox(SubPathByEnv(path), nil, t, v)
 	} else {
 		for i := 0; i < v.NumField(); i++ {
 			ft := t.Field(i)
 			fv := v.Field(i)
-			err = initBox(SubPathByEnv(path), &ft, ft.Type, fv)
+			err = loadBox(SubPathByEnv(path), &ft, ft.Type, fv)
 		}
 	}
 	debugPrintf("INITIALIZED BOX: %#v\n", v)
@@ -81,7 +81,7 @@ func InitAndConfig(box interface{}, path string) error {
 	return err
 }
 
-func initBox(configPath string, f *reflect.StructField, t reflect.Type, v reflect.Value) error {
+func loadBox(configPath string, f *reflect.StructField, t reflect.Type, v reflect.Value) error {
 	switch t.Kind() {
 	case reflect.Ptr:
 		debugPrintf("Ptr %#v\n", v)

@@ -84,10 +84,12 @@ func init() {
 	// Print some useful info.
 	sprbox.PrintInfo(false)
 
-	err := sprbox.InitAndConfig(&App, "example/config")
+	err := sprbox.Load(&App, "example/config")
 	if err != nil {
 		panic(err)
 	}
+
+	App.NotConfigurable.Text = "some text..."
 
 	// From here on you can grab your libs, fully initialized and configured.
 }
