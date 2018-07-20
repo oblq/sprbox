@@ -8,10 +8,6 @@
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-
-[![sprbox](https://img.shields.io/badge/sprbox-compatible-blue.svg)](https://github.com/oblq/sprbox)
-
-
 **SpareBox** is a toolbox factory with automatic package configuration based on your build environment.
 
 ## Installation
