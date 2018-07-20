@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-// EnvVarKey define the name of the environment variable to look for.
+// EnvVarKey define the name of the environment variable to look for
+// to determine the build environment.
 const EnvVarKey = "BUILD_ENV"
 
 var (
@@ -24,18 +25,17 @@ var (
 	// Git-Flow automatic environment selection based on branch name is also supported.
 	// Here the default environment RegEx, you can customize them as you want:
 	//  - Production 	exps: Exps{"production", "master"}
-	//	- Staging 		exps: Exps{"staging", "release/*", "hotfix/*"}
-	//	- Testing 		exps: Exps{"testing", "test", "feature/*"}
+	//	- Staging 	exps: Exps{"staging", "release/*", "hotfix/*"}
+	//	- Testing 	exps: Exps{"testing", "test", "feature/*"}
 	//	- Development 	exps: Exps{"development", "develop", "dev"}
-	//	- Local 		exps: Exps{"local"}
+	//	- Local 	exps: Exps{"local"}
 	BUILDENV = ""
 
-	// VCS is the project version control system, by default is nil.
+	// VCS is the project version control system.
+	// By default it uses the working directory.
 	VCS = NewRepository("./")
 
 	privateTAG = ""
-
-	envLog = kvLogger{}
 )
 
 // Default environment's configuration
@@ -147,6 +147,7 @@ func (e *Environment) Info() string {
 // PrintInfo print some environment info in console.
 func (e *Environment) PrintInfo() {
 	info := fmt.Sprintf("%s - tag: %s%s\n", green(strings.ToUpper(e.String())), BUILDENV, inferredBy)
+	envLog := kvLogger{}
 	envLog.Println("Environment:", info)
 	//envLog.Println("Config path:", ansi.Green(ConfigPathByEnv(configPath))+"\n")
 }

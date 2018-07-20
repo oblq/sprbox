@@ -106,8 +106,8 @@ func (kv *kvLogger) ansify(key interface{}, value interface{}) (string, string) 
 }
 
 func printLoadHeader() {
-	fmt.Printf("%-16v | %-28v | Config\n", "Field name", "Type")
-	fmt.Println("----------------------------------------------------------------")
+	fmt.Printf("%-19v | %-28v | Status\n", "Field name", "Type")
+	fmt.Println("--------------------------------------------------------------------------")
 
 }
 
@@ -116,7 +116,7 @@ func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
 	if f != nil {
 		objName = f.Name
 	}
-	objName = fmt.Sprintf("%-16v", objName)
+	objName = fmt.Sprintf("%-19v", objName)
 	objType := fmt.Sprintf("%-28v", t.String())
 	if err != nil {
 		if err == errOmit {
@@ -127,6 +127,6 @@ func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
 			fmt.Printf("%s | %s | %s\n", blue(objName), objType, red("-> "+err.Error()))
 		}
 	} else {
-		fmt.Printf("%s | %s | %s\n", blue(objName), objType, green("<- loaded"))
+		fmt.Printf("%s | %s | %s\n", blue(objName), objType, green("<- config loaded"))
 	}
 }

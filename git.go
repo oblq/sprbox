@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-var gitLog = kvLogger{ValuePainter: magenta}
-
 // Repository represent a git repository
 type Repository struct {
 	Path                           string
@@ -25,21 +23,15 @@ func NewRepository(path string) *Repository {
 
 // UpdateInfo grab git info and set 'Error' var eventually.
 func (r *Repository) UpdateInfo() {
-	r.BranchName, r.Error = r.git("rev-parse", "--abbrev-ref", "HEAD")
-	r.Commit, _ = r.git("rev-parse", "--short", "HEAD")
-	r.Build, _ = r.git("rev-list", "--all", "--count")
-	r.Tag, _ = r.git("describe", "--abbrev=0", "--tags", "--always")
+	r.BranchName = r.git("rev-parse", "--abbrev-ref", "HEAD")
+	r.Commit = r.git("rev-parse", "--short", "HEAD")
+	r.Build = r.git("rev-list", "--all", "--count")
+	r.Tag = r.git("describe", "--abbrev=0", "--tags", "--always")
 }
 
 // Git is the bash git command.
-func (r *Repository) git(params ...string) (string, error) {
-	gitBinPath, err := exec.LookPath("git")
-	if err != nil {
-		fmt.Println("[git] git not installed...")
-		return "git not installed...", err
-	}
-
-	cmd := exec.Command(gitBinPath, params...)
+func (r *Repository) git(params ...string) string {
+	cmd := exec.Command("git", params...)
 	if len(r.Path) > 0 {
 		cmd.Dir = r.Path
 	}
@@ -55,11 +47,12 @@ func (r *Repository) git(params ...string) (string, error) {
 		gitErrString = strings.TrimPrefix(gitErrString, "fatal: ")
 		gitErrString = strings.TrimSuffix(gitErrString, "\n")
 		gitErrString = strings.TrimSuffix(gitErrString, ": .git")
-		return gitErrString, errors.New(gitErrString)
+		r.Error = errors.New(gitErrString)
+		return gitErrString
 	}
 
 	out := strings.TrimSuffix(string(output), "\n")
-	return out, nil
+	return out
 }
 
 // PrintInfo print git data in console.
@@ -67,6 +60,8 @@ func (r *Repository) PrintInfo() {
 	if r == nil {
 		return
 	}
+	gitLog := kvLogger{ValuePainter: magenta}
+
 	gitLog.Println("Git Branch:", r.BranchName)
 	gitLog.Println("Git Commit:", r.Commit)
 	gitLog.Println("Git Build:", r.Build)

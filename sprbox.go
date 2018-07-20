@@ -52,7 +52,7 @@ type configurable interface {
 	SBConfig(string) error
 }
 
-// InitAndConfig initialize and configure the passed struct
+// InitAndConfig initialize and (eventually) configure the passed struct
 // looking for the config files in the passed path.
 func InitAndConfig(box interface{}, path string) error {
 	t := reflect.TypeOf(box).Elem()
