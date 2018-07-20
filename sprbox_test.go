@@ -44,7 +44,7 @@ type Box struct {
 func TestBox(t *testing.T) {
 	PrintInfo(false)
 	var test Box
-	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+	if err := Load(&test, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if len(test.Tool.ConfigPath) == 0 {
@@ -67,7 +67,7 @@ type BoxError struct {
 
 func TestBoxError(t *testing.T) {
 	var test BoxError
-	if err := InitAndConfig(&test, "testConfigPath"); err == nil {
+	if err := Load(&test, "testConfigPath"); err == nil {
 		t.Error(err)
 	}
 }
@@ -78,7 +78,7 @@ type PTRToolError struct {
 
 func TestPTRToolError(t *testing.T) {
 	var test PTRToolError
-	if err := InitAndConfig(&test, "testConfigPath"); err == nil {
+	if err := Load(&test, "testConfigPath"); err == nil {
 		t.Error(err)
 	}
 }
@@ -91,7 +91,7 @@ type BoxNil struct {
 func TestNilBox(t *testing.T) {
 	ColoredLog = false
 	var test1 BoxNil
-	if err := InitAndConfig(&test1, "testConfigPath"); err != nil {
+	if err := Load(&test1, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if len(test1.Tool1.ConfigPath) == 0 {
@@ -102,14 +102,14 @@ func TestNilBox(t *testing.T) {
 	}
 
 	var test2 *BoxNil
-	if err := InitAndConfig(test2, "testConfigPath"); err != nil {
+	if err := Load(test2, "testConfigPath"); err != nil {
 		t.Log(err)
 	} else {
 		t.Error(err)
 	}
 
 	var test3 = &BoxNil{}
-	if err := InitAndConfig(test3, "testConfigPath"); err != nil {
+	if err := Load(test3, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if len(test3.Tool1.ConfigPath) == 0 {
@@ -122,7 +122,7 @@ func TestNilBox(t *testing.T) {
 
 func TestToolItself(t *testing.T) {
 	var test Tool
-	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+	if err := Load(&test, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if len(test.ConfigPath) == 0 {
@@ -141,7 +141,7 @@ type BoxTags struct {
 
 func TestBoxTags(t *testing.T) {
 	var test BoxTags
-	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+	if err := Load(&test, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if filepath.Base(test.Tool1.ConfigPath) != "Tool1.yml" {
@@ -173,7 +173,7 @@ func TestBoxAfterConfig(t *testing.T) {
 	tString := "must remain the same"
 	test := BoxAfterConfig{}
 	test.Tool2 = Tool{ConfigPath: tString}
-	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+	if err := Load(&test, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 	if len(test.Tool1.ConfigPath) == 0 {
@@ -186,7 +186,7 @@ func TestBoxAfterConfig(t *testing.T) {
 
 func TestNotAStructErr(t *testing.T) {
 	test := []string{"test"}
-	if err := InitAndConfig(&test, "testConfigPath"); err != errNotAStructPointer {
+	if err := Load(&test, "testConfigPath"); err != errNotAStructPointer {
 		t.Error(err)
 	}
 }
@@ -206,7 +206,7 @@ type BoxNotAStructTool struct {
 func TestToolNotAStruct(t *testing.T) {
 	debug = true
 	var test BoxNotAStructTool
-	if err := InitAndConfig(&test, "testConfigPath"); err != nil {
+	if err := Load(&test, "testConfigPath"); err != nil {
 		t.Error(err)
 	}
 }

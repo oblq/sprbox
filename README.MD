@@ -55,7 +55,7 @@ To load a configuration file your struct must implement the [configurable](#usin
 The right config file will be automatically picked from the right `./config/<environment>` subfolder:  
     ```go
     sprbox.PrintInfo(false) // optionally
-    sprbox.InitAndConfig(&ToolBox, "./config")
+    sprbox.Load(&ToolBox, "./config")
     ```
 
 5. ...and the result is:  
