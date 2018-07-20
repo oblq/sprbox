@@ -8,7 +8,7 @@
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
 
-**SpareBox** is a toolbox factory with automatic package configuration based on your build environment.
+**SpareBox** is a toolbox factory with automatic package (struct or struct pointers) initialization and/or configuration based on your build environment.
 
 ## Installation
 
@@ -29,24 +29,27 @@ go get -u github.com/oblq/sprbox
     └── main.go
     ```
     
-2. Define your toolbox, fields can be of any type, sprbox will init nil pointers, if you also need to load a configuration file your struct must implement the [configurable](#using-your-package-in-sprbox)  interface:  
-    ```go
-    type MyToolBox struct {
-        WPool workerful.Workerful `sprbox:"workerpool.yml"`
-    
-        // By default sprbox will look for a file named like the
-        // struct field name (ATool.yml, case insensitive).
-        ATool    Tool
-        AToolPtr *Tool `sprbox:"atool.yml"`
-    
-        // ...or you can skip initialization and initialize it later by code
-        AnOmittedTool Tool `sprbox:"omit"`
-    }
-    
-    var ToolBox MyToolBox
-    ```
+2. Define your toolbox, fields can be of any type, sprbox will init nil struct pointers and pass config files where needed (struct or sruct pointer).  
+To load a configuration file your struct must implement the [configurable](#using-your-package-in-sprbox) interface, you can optionally pass the file name in tags:  
+	```go
+	type MyToolBox struct {
+		// By default sprbox will look for a file named like the
+		// struct field name (atool.yml, case insensitive).
+		ATool    Tool
 
-3. Define the build [environment](#the-build-environment).
+		// Use the same config file used by `ATool`
+		AToolPtr *Tool `sprbox:"atool.yml"`
+
+		WPool workerful.Workerful `sprbox:"workerpool.yml"`
+
+		// ...or you can skip initialization and initialize it later by code
+		AnOmittedTool Tool `sprbox:"omit"`
+	}
+
+	var ToolBox MyToolBox
+	```
+
+3. Decide how the build [environment](#the-build-environment) will be defined.
 
 4. Init and configure the toolbox in one line.  
 The right config file will be automatically picked from the right `./config/<environment>` subfolder:  
@@ -144,21 +147,6 @@ func (mp *MyPackage) SBConfig(configPath string) error {
 		return fmt.Errorf("can't unmarshal config file: %s", err.Error())
 	}
 	return nil
-}
-```
-
-You can put tags in your struct fields to explicit the config file's name or to omit a specific field:
-```go
-type MyToolBox struct {
-    // By default sprbox will look for a file named like the 
-    // struct field name (ATool.yml, case insensitive).
-    ATool    Tool
-    
-    // ...or you can specify the file name:
-    WPool workerful.Workerful `sprbox:"workerpool.yml"`
-
-    // ...or you can skip initialization and initialize and or configure it later by code.
-    AnOmittedTool Tool `sprbox:"omit"`
 }
 ```
     
