@@ -19,15 +19,16 @@ env/_/aware toolbox factory
 
 `
 
+// struct field tags
 const (
-	structFTag      = "sprbox"
-	structFTagVOmit = "omit"
+	sftConfig = "config"
+	sftOmit   = "omit"
 )
 
 var debug = false
 
 var (
-	errNotAStructPointer = errors.New("<box> must be a pointer to a struct")
+	errNotAStructPointer = errors.New("<box> should be a pointer to a struct")
 
 	errInvalidPointer = errors.New(`
 	
@@ -46,6 +47,8 @@ var (
 	errOmit = errors.New("omitted")
 
 	errNoConfigurable = errors.New(`does not implement the 'configurable' interface: SBConfig(string) error`)
+
+	errConfigFileNotFound = errors.New("config file not found")
 )
 
 type configurable interface {
@@ -67,13 +70,11 @@ func Load(box interface{}, path string) error {
 	debugPrintf("ORIGINAL BOX: %#v\n", box)
 	printLoadHeader()
 	var err error
-	if _, isConfigurable := reflect.ValueOf(box).Interface().(configurable); isConfigurable {
-		err = loadBox(SubPathByEnv(path), nil, t, v)
-	} else {
-		for i := 0; i < v.NumField(); i++ {
-			ft := t.Field(i)
-			fv := v.Field(i)
-			err = loadBox(SubPathByEnv(path), &ft, ft.Type, fv)
+	for i := 0; i < v.NumField(); i++ {
+		ft := t.Field(i)
+		fv := v.Field(i)
+		if err = loadBox(path, &ft, ft.Type, fv); err != nil {
+			break
 		}
 	}
 	debugPrintf("INITIALIZED BOX: %#v\n", v)
@@ -86,7 +87,7 @@ func loadBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 	case reflect.Ptr:
 		debugPrintf("Ptr %#v\n", v)
 
-		configFile, omit := lookupTags(f)
+		configFile, omit := parseTags(f)
 		if omit {
 			break
 		}
@@ -96,22 +97,20 @@ func loadBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 			newV := reflect.New(t.Elem())
 			v.Set(newV)
 		}
-		config := filepath.Join(configPath, configFile)
-		if err := loadConfig(config, f, t, &v); err != nil {
+		if err := loadConfig(configPath, configFile, f, t, &v); err != nil {
 			return err
 		}
 
 	case reflect.Struct:
 		debugPrintf("Struct %#v\n", v)
 
-		configFile, omit := lookupTags(f)
+		configFile, omit := parseTags(f)
 		if omit {
 			break
 		}
 
 		newV := reflect.New(t)
-		config := filepath.Join(configPath, configFile)
-		if err := loadConfig(config, f, t, &newV); err != nil {
+		if err := loadConfig(configPath, configFile, f, t, &newV); err != nil {
 			return err
 		}
 		v.Set(newV.Elem())
@@ -123,18 +122,26 @@ func loadBox(configPath string, f *reflect.StructField, t reflect.Type, v reflec
 	return nil
 }
 
-func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
-	if f == nil {
-		return
-	}
-	configFile = f.Name + ".yml"
-	if tag, found := f.Tag.Lookup(structFTag); found {
+// lookupTags returns the config file name and the omit flag.
+// The name will be returned also if not specified in tags,
+// the field name without extension will be returned in that case,
+// loadConfig will look for a file with that prefix and any kind
+// of extension, if necessary (no '.' in file name).
+func parseTags(f *reflect.StructField) (configFile string, omit bool) {
+	configFile = f.Name
+	if tag, found := f.Tag.Lookup(sftOmit); found {
 		if values := strings.Split(tag, ","); len(values) > 0 {
 			for _, value := range values {
-				if value == structFTagVOmit {
+				if value == "true" {
 					printLoadResult(f, f.Type, errOmit)
 					return configFile, true
 				}
+			}
+		}
+	}
+	if tag, found := f.Tag.Lookup(sftConfig); found {
+		if values := strings.Split(tag, ","); len(values) > 0 {
+			for _, value := range values {
 				configFile = value
 			}
 		}
@@ -142,14 +149,20 @@ func lookupTags(f *reflect.StructField) (configFile string, omit bool) {
 	return
 }
 
-func loadConfig(configPath string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
+func loadConfig(configPath string, configFile string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
 	if _, isConfigurable := v.Interface().(configurable); !isConfigurable {
 		printLoadResult(f, t, errNoConfigurable)
 		return nil
 	}
-	err := v.Interface().(configurable).SBConfig(configPath)
-	printLoadResult(f, t, err)
-	return err
+
+	if filePath := SearchFileByEnv(configPath, configFile, true); len(filePath) > 0 {
+		err := v.Interface().(configurable).SBConfig(filePath)
+		printLoadResult(f, t, err)
+		return err
+	}
+
+	printLoadResult(f, t, errConfigFileNotFound)
+	return nil
 }
 
 func debugPrintf(format string, args ...interface{}) {

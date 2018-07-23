@@ -1,23 +1,39 @@
-package main
+package handlers
 
 import (
 	"net/http"
-
 	"time"
 
 	"github.com/labstack/echo"
+	"github.com/oblq/sprbox/example/toolbox"
 )
+
+// CEC is a custom echo context
+type CEC struct {
+	echo.Context
+	App *toolbox.ToolBox
+}
+
+// EchoSprBox provides the AppBox (inherited from echo.Context) to echo.
+// This middleware should be registered before any other.
+func EchoSprBox(h echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// pass the pointer to 'app'
+		embeddedBox := &CEC{Context: c, App: &toolbox.App}
+		return h(embeddedBox)
+	}
+}
 
 // Echo ----------------------------------------------------------------------------------------------------------------
 
-func home(c echo.Context) error {
+func Home(c echo.Context) error {
 	app := c.(*CEC).App
-	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool.getText())
+	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool.GetText())
 }
 
-func text(c echo.Context) error {
+func Text(c echo.Context) error {
 	app := c.(*CEC).App
-	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool2.getText())
+	return c.String(http.StatusOK, "Hello, the text in config is: "+app.ATool2.GetText())
 }
 
 // Pool ----------------------------------------------------------------------------------------------------------------
@@ -35,7 +51,7 @@ func (cj CustomJob) F() error {
 }
 
 // DoSomeJobs will use App.workerpool, initialized and configured by sprbox
-func doSomeJobs(c echo.Context) error {
+func DoSomeJobs(c echo.Context) error {
 	app := c.(*CEC).App
 	jobsNum := 24
 	i := 0
