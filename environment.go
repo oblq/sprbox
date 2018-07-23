@@ -3,7 +3,6 @@ package sprbox
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -96,11 +95,6 @@ func Env() *Environment {
 	default:
 		return Local
 	}
-}
-
-// SubPathByEnv returns <path>/<environment>
-func SubPathByEnv(path string) string {
-	return filepath.Join(path, Env().String())
 }
 
 // Environment struct.
