@@ -168,7 +168,7 @@ if sprbox.Env() == sprbox.Production {
 println(sprbox.Env().String())
 sprbox.Env().PrintInfo()
 
-sprbox.SubPathByEnv("static") // -> "static/<environment>"
+sprbox.EnvSubDir("static") // -> "static/<environment>"
 ```
  
 ## Using your package in sprbox

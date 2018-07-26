@@ -43,7 +43,7 @@ func TestEnvironment(t *testing.T) {
 	}
 
 	println(Env().Info())
-	println(SubPathByEnv(configPath))
+	println(EnvSubDir(configPath))
 
 	// RegEx test
 	Production.AppendExp("branch/*")
