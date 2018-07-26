@@ -9,16 +9,6 @@ import (
 	"strings"
 )
 
-// small slant
-const banner = `
-                __          
-  ___ ___  ____/ / ___ __ __
- (_-</ _ \/ __/ _ / _ \\ \ /
-/___/ .__/_/ /_.__\___/_\_\  %s
-env/_/aware toolbox factory
-
-`
-
 // struct field flags
 const (
 	sftOmit = "omit"

@@ -245,6 +245,17 @@ func TestSFTEnv(t *testing.T) {
 	}
 }
 
+func TestCorruptedFile(t *testing.T) {
+	fileName := "config.yaml"
+	createYAML("wrongObject", fileName, t)
+	defer removeConfigFiles(t)
+
+	var result Config
+	if err := LoadConfig(&result, filepath.Join(configPath, fileName)); err == nil {
+		t.Errorf("corrupted file does not return error")
+	}
+}
+
 func TestWrongConfigFileName(t *testing.T) {
 	config := defaultConfig()
 	fileName := "config.wrong"
@@ -254,17 +265,6 @@ func TestWrongConfigFileName(t *testing.T) {
 	var result Config
 	if err := LoadConfig(&result, filepath.Join(configPath, fileName)); err == nil {
 		t.Errorf("wrong path does not return error")
-	}
-}
-
-func TestCorruptedFile(t *testing.T) {
-	fileName := "config.yaml"
-	createYAML("wrongObject", fileName, t)
-	defer removeConfigFiles(t)
-
-	var result Config
-	if err := LoadConfig(&result, filepath.Join(configPath, fileName)); err == nil {
-		t.Errorf("corrupted file does not return error")
 	}
 }
 

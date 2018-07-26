@@ -12,6 +12,16 @@ import (
 	"regexp"
 )
 
+// small slant
+const banner = `
+                __          
+  ___ ___  ____/ / ___ __ __
+ (_-</ _ \/ __/ _ / _ \\ \ /
+/___/ .__/_/ /_.__\___/_\_\  %s
+env/_/aware toolbox factory
+
+`
+
 const (
 	// struct field tag key
 	sftKey = "sprbox"
@@ -45,7 +55,6 @@ func ColoredLogs(colored bool) {
 // Debug will print detailed logs in console.
 func Debug() {
 	debug = true
-
 	PrintInfo()
 }
 
