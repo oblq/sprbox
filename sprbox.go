@@ -46,6 +46,12 @@ func ColoredLogs(colored bool) {
 func Debug() {
 	debug = true
 
+	PrintInfo()
+}
+
+// PrintInfo print some useful info about
+// the environment and git.
+func PrintInfo() {
 	version := ""
 	sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
 	if sprboxRepo.Error == nil {
@@ -55,13 +61,6 @@ func Debug() {
 	}
 	fmt.Printf(darkGrey(banner), version)
 
-	PrintInfo()
-}
-
-// PrintInfo print some useful info about
-// the environment and git.
-func PrintInfo() {
-	fmt.Printf("\n")
 	Env().PrintInfo()
 	VCS.PrintInfo()
 }
