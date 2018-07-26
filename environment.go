@@ -3,12 +3,13 @@ package sprbox
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
 
-// EnvVarKey define the name of the environment variable to look for
-// to determine the build environment.
+// EnvVarKey is the environment variable that
+// determine the build environment in sprbox.
 const EnvVarKey = "BUILD_ENV"
 
 var (
@@ -95,6 +96,11 @@ func Env() *Environment {
 	default:
 		return Local
 	}
+}
+
+// SubPathByEnv returns <path>/<environment>
+func SubPathByEnv(path string) string {
+	return filepath.Join(path, Env().String())
 }
 
 // Environment struct.

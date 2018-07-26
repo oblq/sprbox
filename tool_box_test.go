@@ -2,12 +2,10 @@ package sprbox
 
 import (
 	"errors"
-	"path/filepath"
-	"strings"
 	"testing"
 )
 
-// add	debug = true for details
+var defaultBoxConfig = Tool{"default config path"}
 
 // Tool is a struct implementing 'configurable' interface.
 type Tool struct {
@@ -15,8 +13,8 @@ type Tool struct {
 }
 
 // SBConfig is the 'configurable' interface implementation.
-func (c *Tool) SBConfig(configPath string) error {
-	c.ConfigPath = configPath
+func (c *Tool) SBConfig(config []byte) error {
+	Unmarshal(config, c)
 	return nil
 }
 
@@ -26,7 +24,7 @@ type ToolError struct {
 }
 
 // SBConfig is the 'configurable' interface implementation.
-func (c *ToolError) SBConfig(configPath string) error {
+func (c *ToolError) SBConfig(config []byte) error {
 	return errors.New("fake error for test")
 }
 
@@ -43,18 +41,15 @@ type Box struct {
 }
 
 func TestBox(t *testing.T) {
-	PrintInfo(false)
-
-	//debug = true
-
-	CreateConfigFiles(Env().String(), []string{"Tool.json", "PTRTool.toml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createJSON(defaultBoxConfig, "Tool.json", t)
+	createTOML(defaultBoxConfig, "PTRTool.toml", t)
+	defer removeConfigFiles(t)
 
 	var test Box
-	if err := Load(&test, configPath); err != nil {
+	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	if len(test.Tool.ConfigPath) == 0 {
+	if test.Tool.ConfigPath != defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool.ConfigPath is empty")
 	}
 	if len(test.PTRTool.ConfigPath) == 0 {
@@ -73,11 +68,11 @@ type BoxError struct {
 }
 
 func TestBoxError(t *testing.T) {
-	CreateConfigFiles(Env().String(), []string{"ToolError.yaml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createYAML(defaultBoxConfig, "ToolError.yaml", t)
+	defer removeConfigFiles(t)
 
 	var test BoxError
-	if err := Load(&test, configPath); err == nil {
+	if err := LoadToolBox(&test, configPath); err == nil {
 		t.Error(err)
 	}
 }
@@ -87,11 +82,11 @@ type PTRToolError struct {
 }
 
 func TestPTRToolError(t *testing.T) {
-	CreateConfigFiles(Env().String(), []string{"PTRToolError.yml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createYAML(defaultBoxConfig, "PTRToolError.yml", t)
+	defer removeConfigFiles(t)
 
 	var test PTRToolError
-	if err := Load(&test, configPath); err == nil {
+	if err := LoadToolBox(&test, configPath); err == nil {
 		t.Error(err)
 	}
 }
@@ -102,13 +97,14 @@ type BoxNil struct {
 }
 
 func TestNilBox(t *testing.T) {
-	ColoredLog = false
+	ColoredLogs(false)
 
-	CreateConfigFiles(Env().String(), []string{"Tool1.json", "Tool2.toml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createJSON(defaultBoxConfig, "Tool1.json", t)
+	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	defer removeConfigFiles(t)
 
 	var test1 BoxNil
-	if err := Load(&test1, configPath); err != nil {
+	if err := LoadToolBox(&test1, configPath); err != nil {
 		t.Error(err)
 	}
 	if len(test1.Tool1.ConfigPath) == 0 {
@@ -119,14 +115,14 @@ func TestNilBox(t *testing.T) {
 	}
 
 	var test2 *BoxNil
-	if err := Load(test2, configPath); err != nil {
+	if err := LoadToolBox(test2, configPath); err != nil {
 		t.Log(err)
 	} else {
 		t.Error(err)
 	}
 
 	var test3 = &BoxNil{}
-	if err := Load(test3, configPath); err != nil {
+	if err := LoadToolBox(test3, configPath); err != nil {
 		t.Error(err)
 	}
 	if len(test3.Tool1.ConfigPath) == 0 {
@@ -135,6 +131,8 @@ func TestNilBox(t *testing.T) {
 	if len(test3.Tool2.ConfigPath) == 0 {
 		t.Error("test3.Tool2.ConfigPath:", test3.Tool2.ConfigPath)
 	}
+
+	ColoredLogs(true)
 }
 
 type BoxConfigFiles struct {
@@ -145,13 +143,13 @@ type BoxConfigFiles struct {
 }
 
 func TestConfigFiles(t *testing.T) {
-	ColoredLog = true
-
-	CreateConfigFiles(Env().String(), []string{"Tool1.yml", "Tool2.toml", "Tool3.json"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createYAML(defaultBoxConfig, "Tool1.yml", t)
+	createJSON(defaultBoxConfig, "Tool3.json", t)
+	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	defer removeConfigFiles(t)
 
 	var test BoxConfigFiles
-	if err := Load(&test, configPath); err != nil {
+	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
 	if len(test.Tool1.ConfigPath) == 0 {
@@ -170,67 +168,68 @@ func TestConfigFiles(t *testing.T) {
 
 type BoxTags struct {
 	Tool1 Tool
-	Tool2 Tool  `omit:"true"`
-	Tool3 Tool  `config:"test.yml"`
-	Tool4 Tool  `omit:"true" config:"test.yml"`
-	Tool5 Tool  `config:"test.yml" omit:"true"`
-	Tool6 *Tool `omit:"true"`
+	Tool2 Tool  `sprbox:"omit"`
+	Tool3 Tool  `sprbox:"test.yml"`
+	Tool5 Tool  `sprbox:"test.yml,omit"`
+	Tool6 *Tool `sprbox:"omit"`
 	Tool7 *Tool
-	Tool8 *Tool `config:"tool8"`
+	Tool8 *Tool `sprbox:"tool8"`
 }
 
 func TestBoxTags(t *testing.T) {
 	BUILDENV = "dev"
 
-	CreateConfigFiles("", []string{"Tool7.development.yml", "tool8.development.json"}, t)
-	defer RemoveConfigFiles("", t)
+	devConfig := defaultBoxConfig
+	devpath := "dev"
+	devConfig.ConfigPath = devpath
 
-	CreateConfigFiles(Env().String(), []string{"Tool1.yml", "test.yml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createYAML(devConfig, "Tool7.development.yml", t)
+	createYAML(defaultBoxConfig, "Tool1.yml", t)
+	createYAML(defaultBoxConfig, "test.yml", t)
+	createJSON(devConfig, "tool8.development.json", t)
+	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	defer removeConfigFiles(t)
 
 	var test BoxTags
-	if err := Load(&test, configPath); err != nil {
+	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	if !strings.HasPrefix(strings.ToLower(filepath.Base(test.Tool1.ConfigPath)), "tool1") {
+	if test.Tool1.ConfigPath != defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
 	}
-	if len(test.Tool2.ConfigPath) > 0 {
+	if test.Tool2.ConfigPath == defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
 	}
-	if filepath.Base(test.Tool3.ConfigPath) != "test.yml" {
+	if test.Tool3.ConfigPath != defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
-	}
-	if len(test.Tool4.ConfigPath) > 0 {
-		t.Error("test.Tool4.ConfigPath:", test.Tool4.ConfigPath)
 	}
 	if len(test.Tool5.ConfigPath) > 0 {
 		t.Error("test.Tool5.ConfigPath:", test.Tool5.ConfigPath)
 	}
-	if test.Tool6 != nil {
+	if test.Tool6.ConfigPath == defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool6 not nil", test.Tool6)
 	}
-	if !strings.HasPrefix(strings.ToLower(filepath.Base(test.Tool7.ConfigPath)), "tool7.development") {
-		t.Error("test.Tool7.ConfigPath:", test.Tool1.ConfigPath)
+	if test.Tool7.ConfigPath != devpath {
+		t.Error("test.Tool7.ConfigPath:", test.Tool7.ConfigPath)
 	}
-	if !strings.HasPrefix(strings.ToLower(filepath.Base(test.Tool8.ConfigPath)), "tool8.development") {
-		t.Error("test.Tool8.ConfigPath:", test.Tool1.ConfigPath)
+	if test.Tool8.ConfigPath != devpath {
+		t.Error("test.Tool8.ConfigPath:", test.Tool8.ConfigPath)
 	}
 }
 
 type BoxAfterConfig struct {
 	Tool1 Tool
-	Tool2 Tool `omit:"true"`
+	Tool2 Tool `sprbox:"omit"`
 }
 
 func TestBoxAfterConfig(t *testing.T) {
-	CreateConfigFiles(Env().String(), []string{"Tool1.yml"}, t)
-	defer RemoveConfigFiles(Env().String(), t)
+	createYAML(defaultBoxConfig, "Tool1.yml", t)
+	defer removeConfigFiles(t)
 
 	tString := "must remain the same"
 	test := BoxAfterConfig{}
 	test.Tool2 = Tool{ConfigPath: tString}
-	if err := Load(&test, configPath); err != nil {
+	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
 	if len(test.Tool1.ConfigPath) == 0 {
@@ -243,7 +242,7 @@ func TestBoxAfterConfig(t *testing.T) {
 
 func TestNotAStructErr(t *testing.T) {
 	test := []string{"test"}
-	if err := Load(&test, configPath); err != errNotAStructPointer {
+	if err := LoadToolBox(&test, configPath); err != errNotAStructPointer {
 		t.Error(err)
 	}
 }
@@ -252,7 +251,7 @@ func TestNotAStructErr(t *testing.T) {
 type ToolNotAStruct []string
 
 // SBConfig is the 'configurable' interface implementation.
-func (c *ToolNotAStruct) SBConfig(configPath string) error {
+func (c *ToolNotAStruct) SBConfig(config []byte) error {
 	return nil
 }
 
@@ -261,9 +260,8 @@ type BoxNotAStructTool struct {
 }
 
 func TestToolNotAStruct(t *testing.T) {
-	debug = true
 	var test BoxNotAStructTool
-	if err := Load(&test, configPath); err != nil {
+	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
 }
