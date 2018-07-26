@@ -24,14 +24,15 @@ go get -u github.com/oblq/sprbox
 Given that project structure:
 ```
 ├── config
-│   └── cfg.yaml
+│   ├── pg.yaml
+│   └── pg.production.yaml
 └── main.go
 ```
 
-cfg.yaml:
+pg.yaml:
 
 ```yaml
-fromyaml: "this comes from yaml"
+port: 2345
 ```
 
 ...to unmarshal that config file to a struct is simple like that:
@@ -44,33 +45,37 @@ import (
 	"os"
 	
 	"github.com/oblq/sprbox"
-	"github.com/oblq/workerful"
 )
 
-type Config struct{
-	FromEnv     string  `sprbox:"env=ASTRING"` // grab the value from the environment
-	FromDefault string  `sprbox:"default=this comes from default,required"` // set the default value
-	FromYaml    string  `sprbox:"required"` // error if not provided
+type PostgresConfig struct{
+	// Environment vars overrides both default values and config file provided values.
+	DB       string `sprbox:"env=POSTGRES_DB,default=postgres"`
+	User     string `sprbox:"env=POSTGRES_USER,default=postgres"`
+	// If no value is found that will return an error: 'required'.
+	Password string `sprbox:"env=POSTGRES_PASSWORD,required"`
+	Port     int    `sprbox:"default=5432"`
 } 
 
 func main() {
-	os.Setenv("ASTRING", "this comes from the environment")
+	os.Setenv("POSTGRES_PASSWORD", "only_known_by_me123")
 	
-	var myConfig Config	
-	err := sprbox.LoadConfig(&myConfig, "./config/cfg.yaml")
-	if err != nil {
+	var pgConfig PostgresConfig	
+	if err := sprbox.LoadConfig(&pgConfig, "config/pg.yaml"); err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("%#v\n", myConfig) 
+	
+	fmt.Printf("%#v\n", pgConfig) 
 	// Config{
-	//      FromEnv:        "this comes from the environment", 
-	//      FromDefault:    "this comes from default",
-	//      FromYaml:       "this comes from yaml",
+	//      DB:         "postgres"
+	//      User:       "postgres"
+	//      Password:   "only_known_by_me123"
+	//      Port:       2345
 	// }
 }
 ```
 
-Depending on the [build environment](#the-build-environment), trying to load `./cfg.yml` will also load `./cfg.<environment>.yml` (eg.: `cfg.production.yml`) if found, the latest will override the universal one for the specific environment.  
+Depending on the [build environment](#the-build-environment), trying to load `config/pg.yml` will also load `config/pg.<environment>.yml` (eg.: `cfg.production.yml`).  
+If any environment-specific file will be found, for the current environment, that will override the universal one.  
 
 The file extension in the file path can be omitted, since sprbox can load YAML, TOML and JSON files it will search for `cfg.*` using RegEx, the config file itself must have an extension.  
 
@@ -101,10 +106,10 @@ var ToolBox MyToolBox
 
 ##### 2. Init and configure the toolbox in one line.  
 
-You can optionally pass the config file name to look for in the toolbox struct tags and, as for the `LoadConfig()` func, also in `LoadToolBox()` `cfg.<environment>.*` file will override `cfg.*`:  
+As for the `sprbox.LoadConfig()` func, also in `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.*`) will override the universal one (`cfg.*`):  
 
 ```go
-// ./config is your config path
+// sprbox.Debug() // optionally set debug mode
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
@@ -112,8 +117,8 @@ sprbox.LoadToolBox(&ToolBox, "./config")
 
 ## The build environment
  
-The build environment is determined matching a ***tag*** against some RegEx, since any of the env's RegEx can be edited users have maximum flexibility on the method to use.  
-For instance, the machine hostname (`cat /etc/hostname`) can be used for the ***tag***... you decide.
+The build environment is determined matching a ***tag*** against some predefined environment specific RegEx, since any of the env's RegEx can be edited users have the maximum flexibility on the method to use.  
+For instance, the machine hostname (`cat /etc/hostname`) can be used.
 
 sprbox will try to grab that tag in three different ways, in a precise order, if one can't be determined it will check for the next one:
 
@@ -165,10 +170,10 @@ Finally you can check the current env in code with:
 if sprbox.Env() == sprbox.Production { 
     doSomething() 
 }
-println(sprbox.Env().String())
+
 sprbox.Env().PrintInfo()
 
-sprbox.SubPathByEnv("static") // -> "static/<environment>"
+sprbox.EnvSubDir("static") // -> "static/<environment>"
 ```
  
 ## Using your package in sprbox
@@ -181,7 +186,7 @@ type configurable interface {
 }
 ```
 
-For instance:
+Example:
 
 ```go
 type MyPackage struct {

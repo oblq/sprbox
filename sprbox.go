@@ -12,6 +12,16 @@ import (
 	"regexp"
 )
 
+// small slant
+const banner = `
+                __          
+  ___ ___  ____/ / ___ __ __
+ (_-</ _ \/ __/ _ / _ \\ \ /
+/___/ .__/_/ /_.__\___/_\_\  %s
+env/_/aware toolbox factory
+
+`
+
 const (
 	// struct field tag key
 	sftKey = "sprbox"
@@ -45,7 +55,12 @@ func ColoredLogs(colored bool) {
 // Debug will print detailed logs in console.
 func Debug() {
 	debug = true
+	PrintInfo()
+}
 
+// PrintInfo print some useful info about
+// the environment and git.
+func PrintInfo() {
 	version := ""
 	sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
 	if sprboxRepo.Error == nil {
@@ -55,13 +70,6 @@ func Debug() {
 	}
 	fmt.Printf(darkGrey(banner), version)
 
-	PrintInfo()
-}
-
-// PrintInfo print some useful info about
-// the environment and git.
-func PrintInfo() {
-	fmt.Printf("\n")
 	Env().PrintInfo()
 	VCS.PrintInfo()
 }
