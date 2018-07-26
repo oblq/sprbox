@@ -2,11 +2,7 @@ package sprbox
 
 import (
 	"fmt"
-	"reflect"
 )
-
-// ColoredLog enable or disable colors in console.
-var ColoredLog = true
 
 type color string
 
@@ -27,7 +23,7 @@ const (
 
 type painter func(interface{}) string
 
-// Black return the argument as a color escaped string
+// def return the argument as a color escaped string
 func def(arg interface{}) string {
 	return colorize(fmt.Sprint(arg), defaultFG)
 }
@@ -65,7 +61,7 @@ func darkGrey(arg interface{}) string {
 // colored return the ANSI colored formatted string.
 func colorize(arg string, color color) string {
 	coloredFormat := "%v"
-	if len(color) > 0 && ColoredLog {
+	if len(color) > 0 && coloredLogs {
 		coloredFormat = esc + "%vm%v" + clear
 		return fmt.Sprintf(coloredFormat, color, arg)
 	}
@@ -103,30 +99,4 @@ func (kv *kvLogger) ansify(key interface{}, value interface{}) (string, string) 
 	}
 
 	return k, v
-}
-
-func printLoadHeader() {
-	fmt.Printf("%-22v | %-28v | Status\n", "Field name", "Type")
-	fmt.Println("--------------------------------------------------------------------------")
-
-}
-
-func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
-	objName := t.Name()
-	if f != nil {
-		objName = f.Name
-	}
-	objName = fmt.Sprintf("%-22v", objName)
-	objType := fmt.Sprintf("%-28v", t.String())
-	if err != nil {
-		if err == errOmit {
-			fmt.Printf("%s | %s | %s\n", blue(objName), objType, err.Error())
-		} else if err == errNoConfigurable || err == errConfigFileNotFound {
-			fmt.Printf("%s | %s | %s\n", blue(objName), objType, yellow("-> "+err.Error()))
-		} else {
-			fmt.Printf("%s | %s | %s\n", blue(objName), objType, red("-> "+err.Error()))
-		}
-	} else {
-		fmt.Printf("%s | %s | %s\n", blue(objName), objType, green("<- config loaded"))
-	}
 }
