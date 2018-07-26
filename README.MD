@@ -170,7 +170,7 @@ Finally you can check the current env in code with:
 if sprbox.Env() == sprbox.Production { 
     doSomething() 
 }
-println(sprbox.Env().String())
+
 sprbox.Env().PrintInfo()
 
 sprbox.EnvSubDir("static") // -> "static/<environment>"

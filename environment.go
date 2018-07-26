@@ -70,7 +70,7 @@ func loadTag() {
 	} else if VCS != nil {
 		if VCS.Error == nil {
 			privateTAG = VCS.BranchName
-			inferredBy = "<empty>, inferred from git.BranchName."
+			inferredBy = fmt.Sprintf("<empty>, inferred from git.BranchName (%s).", VCS.BranchName)
 			return
 		}
 	}
@@ -141,12 +141,12 @@ func (e *Environment) String() string {
 
 // Info return some environment info.
 func (e *Environment) Info() string {
-	return fmt.Sprintf("%s - tag: %s%s\n", strings.ToUpper(e.String()), BUILDENV, inferredBy)
+	return fmt.Sprintf("%s - tag: %s\n", strings.ToUpper(e.String()), inferredBy)
 }
 
 // PrintInfo print some environment info in console.
 func (e *Environment) PrintInfo() {
-	info := fmt.Sprintf("%s - tag: %s%s\n", green(strings.ToUpper(e.String())), BUILDENV, inferredBy)
+	info := fmt.Sprintf("%s - tag: %s\n", green(strings.ToUpper(e.String())), inferredBy)
 	envLog := kvLogger{}
 	envLog.Println("Environment:", info)
 	//envLog.Println("Config path:", ansi.Green(ConfigPathByEnv(configPath))+"\n")
