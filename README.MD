@@ -248,6 +248,11 @@ func init() {
 
 - [`workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
 
+## Used packages
+
+- [`gopkg.in/yaml.v2`](https://github.com/go-yaml/yaml)  
+- [`github.com/BurntSushi/toml`](https://github.com/BurntSushi/toml)
+
 ## Author
 
 - [Marco Muratori](mailto:marcomrtr@gmail.com) 
