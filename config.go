@@ -1,20 +1,16 @@
 package sprbox
 
 import (
-	"errors"
-	"io/ioutil"
-	"path/filepath"
-	"regexp"
-
-	"os"
-	"reflect"
-	"strings"
-
-	"fmt"
-
-	"encoding/json"
-
 	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v2"
