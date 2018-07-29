@@ -31,19 +31,16 @@ type ToolBox struct {
 var Shared ToolBox
 
 func init() {
-
 	// set environment manually and debug mode: ------------------------------------------------------------------------
 
 	// Set `testing` build environment manually.
 	sprbox.BUILDENV = "testing"
 
 	// optionally turn off colors in logs
-	//sprbox.ColorOff()
+	//sprbox.ColoredLogs(false)
 
 	// set debug mode
-	//sprbox.Debug()
-
-	sprbox.PrintInfo()
+	sprbox.Debug()
 
 	// load toolbox: ---------------------------------------------------------------------------------------------------
 

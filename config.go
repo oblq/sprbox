@@ -133,7 +133,7 @@ func mergedConfigs(filePath string) (data []byte, err error) {
 		}
 	}
 
-	debugPrintf(green(" = ")+"%+v\n", green(prettyPrinted(merged)))
+	debugPrintf(green(" = ")+"%+v\n", green(dump(merged)))
 	ext := filepath.Ext(files[0])
 
 	switch {
@@ -153,8 +153,7 @@ func mergedConfigs(filePath string) (data []byte, err error) {
 // INTERNAL PARSING ----------------------------------------------------------------------------------------------------
 
 func unmarshalJSON(data []byte, config interface{}, filePath string) (err error) {
-	err = json.Unmarshal(data, config)
-	return
+	return json.Unmarshal(data, config)
 }
 
 func unmarshalTOML(data []byte, config interface{}, filePath string) (err error) {
@@ -163,8 +162,7 @@ func unmarshalTOML(data []byte, config interface{}, filePath string) (err error)
 }
 
 func unmarshalYAML(data []byte, config interface{}, filePath string) (err error) {
-	err = yaml.Unmarshal(data, config)
-	return
+	return yaml.Unmarshal(data, config)
 }
 
 // unmarshal will unmarshall the file or the file bytes to the 'out' interface.
@@ -314,7 +312,7 @@ func LoadConfig(config interface{}, filePath string) (err error) {
 	}
 
 	defer fmt.Print("\n")
-	defer debugPrintf("%s%s\n", "Loaded config: ", green(prettyPrinted(config)))
+	defer debugPrintf("%s%s\n", "Loaded config: ", green(dump(config)))
 
 	return
 }
