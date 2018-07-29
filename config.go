@@ -41,10 +41,10 @@ const (
 
 // walkConfigPath look for a file matching the passed regex skipping sub-directories.
 func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string) {
-	err := filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
-		if info == nil {
-			return filepath.SkipDir
-		}
+	_ = filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
+		//if info == nil {
+		//	return filepath.SkipDir
+		//}
 
 		if info.IsDir() && info.Name() != filepath.Base(configPath) {
 			return filepath.SkipDir
@@ -61,9 +61,9 @@ func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string
 		return nil
 	})
 
-	if err != nil {
-		debugPrintf("walkConfigPath error: %s", err.Error())
-	}
+	//if err != nil {
+	//	debugPrintf("walkConfigPath error: %s", err.Error())
+	//}
 	return
 }
 
@@ -138,16 +138,15 @@ func mergedConfigs(filePath string) (data []byte, err error) {
 
 	switch {
 	case regexp.MustCompile(regexYAML).MatchString(ext):
-		return yaml.Marshal(merged)
+		data, err = yaml.Marshal(merged)
 	case regexp.MustCompile(regexTOML).MatchString(ext):
 		var buffer bytes.Buffer
-		err := toml.NewEncoder(&buffer).Encode(merged)
-		return buffer.Bytes(), err
+		err = toml.NewEncoder(&buffer).Encode(merged)
+		data = buffer.Bytes()
 	case regexp.MustCompile(regexJSON).MatchString(ext):
-		return json.Marshal(merged)
-	default:
-		return nil, errors.New("unknown config file format")
+		data, err = json.Marshal(merged)
 	}
+	return
 }
 
 // INTERNAL PARSING ----------------------------------------------------------------------------------------------------
@@ -227,9 +226,6 @@ func parseConfigTags(config interface{}) error {
 		for _, flag := range fields {
 
 			kv := strings.Split(flag, "=")
-			if len(kv) < 1 {
-				continue
-			}
 
 			if kv[0] == sftEnv {
 				if len(kv) == 2 {
@@ -272,6 +268,16 @@ func parseConfigTags(config interface{}) error {
 				for i := 0; i < fv.Len(); i++ {
 					if reflect.Indirect(fv.Index(i)).Kind() == reflect.Struct {
 						if err := parseConfigTags(fv.Index(i).Addr().Interface()); err != nil {
+							return err
+						}
+					}
+				}
+			}
+
+			if fv.Kind() == reflect.Map {
+				for _, key := range fv.MapKeys() {
+					if reflect.Indirect(fv.MapIndex(key)).Kind() == reflect.Struct {
+						if err := parseConfigTags(fv.MapIndex(key).Interface()); err != nil {
 							return err
 						}
 					}

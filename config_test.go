@@ -74,16 +74,20 @@ type Postgres struct {
 }
 
 type EmbeddedStruct struct {
-	Field1 string
+	Field1 string `sprbox:"default=sprbox"`
 	Field2 string `sprbox:"required"`
 }
 
 type Config struct {
-	String   string `sprbox:"default=sprbox"`
-	PG       Postgres
-	Slice    []string
-	Map      *map[string]string
-	Embedded []EmbeddedStruct
+	String        string `sprbox:"default=sprbox"`
+	PG            Postgres
+	Slice         []string
+	Map           *map[string]string
+	EmbeddedSlice []EmbeddedStruct
+	// EmbeddedStruct without pointer inside of a map would not be addressable,
+	// so, this is the way that make sense...
+	// Otherwise also 'config.EmbeddedMap["test"].Field1 = "a value"' can't be done.
+	EmbeddedMap map[string]*EmbeddedStruct
 }
 
 func defaultConfig() Config {
@@ -97,10 +101,16 @@ func defaultConfig() Config {
 			Password: "myPass123",
 			Port:     5432,
 		},
-		Embedded: []EmbeddedStruct{
+		EmbeddedSlice: []EmbeddedStruct{
 			{
-				Field1: "f1",
+				Field1: "sprbox",
 				Field2: "f2",
+			},
+		},
+		EmbeddedMap: map[string]*EmbeddedStruct{
+			"test": {
+				Field1: "sprbox",
+				Field2: "f2map",
 			},
 		},
 	}
@@ -112,6 +122,8 @@ func TestYAML(t *testing.T) {
 	fileName := "config.yaml"
 	createYAML(config, fileName, t)
 	defer removeConfigFiles(t)
+
+	Debug()
 
 	var result1 Config
 	if err := LoadConfig(&result1, filepath.Join(configPath, fileName)); err != nil {
@@ -128,6 +140,8 @@ func TestYAML(t *testing.T) {
 	if !reflect.DeepEqual(result2, config) {
 		t.Errorf("\n\nFile:\n%#v\n\nConfig:\n%#v\n\n", config, result2)
 	}
+
+	debug = false
 }
 
 func TestYML(t *testing.T) {
@@ -199,22 +213,39 @@ func TestJSON(t *testing.T) {
 	}
 }
 
+// only passing filename
+func TestYAMLWrongPath(t *testing.T) {
+	fileName := "config.yaml"
+	var result1 Config
+	if err := LoadConfig(&result1, fileName); err == nil {
+		t.Error(err)
+	}
+}
+
+//SFT = struct field tags
 func TestSFTDefault(t *testing.T) {
 	config := defaultConfig()
 	config.String = ""
 	config.PG.Port = 0
+	config.EmbeddedSlice[0].Field1 = ""
+	config.EmbeddedMap["test"].Field1 = ""
 
 	fileName := "config.yaml"
 	createYAML(config, fileName, t)
 	defer removeConfigFiles(t)
+
+	Debug()
 
 	var result Config
 	LoadConfig(&result, filepath.Join(configPath, fileName))
 	if !reflect.DeepEqual(result, defaultConfig()) {
 		t.Errorf("\n\nFile:\n%#v\n\nConfig:\n%#v\n\n", defaultConfig(), result)
 	}
+
+	debug = false
 }
 
+//SFT = struct field tags
 func TestSFTRequired(t *testing.T) {
 	config := defaultConfig()
 	config.PG.Password = ""
@@ -229,6 +260,7 @@ func TestSFTRequired(t *testing.T) {
 	}
 }
 
+//SFT = struct field tags
 func TestSFTEnv(t *testing.T) {
 	config := defaultConfig()
 	config.PG.DB = "wrong"
