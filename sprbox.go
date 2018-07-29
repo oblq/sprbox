@@ -64,8 +64,6 @@ func PrintInfo() {
 	sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
 	if sprboxRepo.Error == nil {
 		version = "v" + sprboxRepo.Tag + "(" + sprboxRepo.Build + ")"
-	} else {
-		println(sprboxRepo.Error.Error())
 	}
 	fmt.Printf(darkGrey(banner), version)
 

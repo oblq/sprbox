@@ -45,6 +45,9 @@ func TestBox(t *testing.T) {
 	createTOML(defaultBoxConfig, "PTRTool.toml", t)
 	defer removeConfigFiles(t)
 
+	PrintInfo()
+	Debug()
+
 	var test Box
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
