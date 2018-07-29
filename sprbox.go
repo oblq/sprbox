@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 )
 
 // small slant
@@ -38,13 +37,13 @@ var (
 	FileSearchCaseSensitive = true
 )
 
-var testRegexp = regexp.MustCompile(`_test|(\.test$)`)
+//var testRegexp = regexp.MustCompile(`_test|(\.test$)`)
 
 func init() {
 	// automatic debug during tests
-	if testRegexp.MatchString(os.Args[0]) {
-		Debug()
-	}
+	//if testRegexp.MatchString(os.Args[0]) {
+	//	Debug()
+	//}
 }
 
 // ColoredLogs turn on/off colors in console.
@@ -80,7 +79,7 @@ func debugPrintf(format string, args ...interface{}) {
 	}
 }
 
-func prettyPrinted(v interface{}) string {
+func dump(v interface{}) string {
 	b, _ := json.MarshalIndent(v, "", "  ")
 	return string(b)
 }

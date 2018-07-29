@@ -64,7 +64,7 @@ func LoadToolBox(toolBox interface{}, configPath string) error {
 			break
 		}
 	}
-	debugPrintf("\nLoaded toolbox: %s\n", green(prettyPrinted(toolBox)))
+	debugPrintf("\nLoaded toolbox: %s\n", green(dump(toolBox)))
 	fmt.Print("\n")
 	return err
 }
