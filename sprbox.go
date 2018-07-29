@@ -52,8 +52,8 @@ func ColoredLogs(colored bool) {
 }
 
 // Debug will print detailed logs in console.
-func Debug() {
-	debug = true
+func SetDebug(anabled bool) {
+	debug = anabled
 	PrintInfo()
 }
 

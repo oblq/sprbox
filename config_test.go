@@ -123,7 +123,7 @@ func TestYAML(t *testing.T) {
 	createYAML(config, fileName, t)
 	defer removeConfigFiles(t)
 
-	Debug()
+	SetDebug(true)
 
 	var result1 Config
 	if err := LoadConfig(&result1, filepath.Join(configPath, fileName)); err != nil {
@@ -141,7 +141,7 @@ func TestYAML(t *testing.T) {
 		t.Errorf("\n\nFile:\n%#v\n\nConfig:\n%#v\n\n", config, result2)
 	}
 
-	debug = false
+	SetDebug(false)
 }
 
 func TestYML(t *testing.T) {
@@ -248,7 +248,7 @@ func TestSFTDefault(t *testing.T) {
 	createYAML(config, fileName, t)
 	defer removeConfigFiles(t)
 
-	Debug()
+	SetDebug(true)
 
 	var result Config
 	LoadConfig(&result, filepath.Join(configPath, fileName))
@@ -256,7 +256,7 @@ func TestSFTDefault(t *testing.T) {
 		t.Errorf("\n\nFile:\n%#v\n\nConfig:\n%#v\n\n", defaultConfig(), result)
 	}
 
-	debug = false
+	SetDebug(false)
 }
 
 //SFT = struct field tags

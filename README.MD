@@ -109,7 +109,7 @@ var ToolBox MyToolBox
 As for the `sprbox.LoadConfig()` func, also in `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.*`) will override the universal one (`cfg.*`):  
 
 ```go
-// sprbox.Debug() // optionally set debug mode
+// sprbox.SetDebug(true) // optionally set debug mode
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 

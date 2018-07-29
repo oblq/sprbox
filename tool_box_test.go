@@ -46,7 +46,7 @@ func TestBox(t *testing.T) {
 	defer removeConfigFiles(t)
 
 	PrintInfo()
-	Debug()
+	SetDebug(true)
 
 	var test Box
 	if err := LoadToolBox(&test, configPath); err != nil {
@@ -64,6 +64,8 @@ func TestBox(t *testing.T) {
 	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
 		t.Error("test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 	}
+
+	SetDebug(false)
 }
 
 type BoxError struct {
