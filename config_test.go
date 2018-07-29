@@ -213,6 +213,20 @@ func TestJSON(t *testing.T) {
 	}
 }
 
+func TestParsingIntoNonStruct(t *testing.T) {
+	config := defaultConfig()
+	fileName := "config.yaml"
+	createYAML(config, fileName, t)
+	defer removeConfigFiles(t)
+
+	var result1 string
+	err := LoadConfig(&result1, filepath.Join(configPath, fileName))
+	if err == nil {
+		t.Error(err)
+	}
+	t.Log(err)
+}
+
 // only passing filename
 func TestYAMLWrongPath(t *testing.T) {
 	fileName := "config.yaml"

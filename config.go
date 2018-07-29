@@ -199,8 +199,8 @@ func unmarshal(filePath string, in []byte, out interface{}) (err error) {
 			return nil
 		}
 
-		return fmt.Errorf("unknown data format, can't unmarshal file content: '%s'",
-			strings.TrimSuffix(string(in), "\n"))
+		return fmt.Errorf("the provided data is incompatible with an interface of type %#v:\n(%s)",
+			out, strings.TrimSuffix(string(in), "\n"))
 	}
 }
 
