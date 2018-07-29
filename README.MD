@@ -11,11 +11,16 @@
 
 
 Dynamically create toolbox singletons with automatic configuration based on your build environment.  
-SpareBox is an agnostic config parser (supporting YAML, TOML, JSON and Environment vars) and a toolbox factory that will help you in keeping your projects ordered and maintainable.
+SpareBox is also an agnostic config parser (supporting YAML, TOML, JSON and Environment vars), it will help you in keeping your projects and their configuration files ordered and maintainable.
 
 ## Installation
 
 ```sh
+# only needed for the config parser:
+go get -u gopkg.in/yaml.v2
+go get -u github.com/BurntSushi/toml
+
+# install sprbox:
 go get -u github.com/oblq/sprbox
 ```
 
