@@ -38,11 +38,9 @@ func (r *Repository) git(params ...string) string {
 
 	output, err := cmd.Output()
 	if err != nil {
-		var gitErrString string
+		gitErrString := err.Error()
 		if exitError, ok := err.(*exec.ExitError); ok {
 			gitErrString = string(exitError.Stderr)
-		} else {
-			gitErrString = err.Error()
 		}
 		gitErrString = strings.TrimPrefix(gitErrString, "fatal: ")
 		gitErrString = strings.TrimSuffix(gitErrString, "\n")

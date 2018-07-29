@@ -45,6 +45,9 @@ func TestBox(t *testing.T) {
 	createTOML(defaultBoxConfig, "PTRTool.toml", t)
 	defer removeConfigFiles(t)
 
+	PrintInfo()
+	SetDebug(true)
+
 	var test Box
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
@@ -61,6 +64,8 @@ func TestBox(t *testing.T) {
 	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
 		t.Error("test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 	}
+
+	SetDebug(false)
 }
 
 type BoxError struct {

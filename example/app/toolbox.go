@@ -40,7 +40,7 @@ func init() {
 	//sprbox.ColoredLogs(false)
 
 	// set debug mode
-	sprbox.Debug()
+	sprbox.SetDebug(true)
 
 	// load toolbox: ---------------------------------------------------------------------------------------------------
 
