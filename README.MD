@@ -11,7 +11,7 @@
 
 
 Dynamically create toolbox singletons with automatic configuration based on your build environment.  
-SpareBox is also an agnostic config parser (supporting YAML, TOML, JSON and Environment vars), it will help you in keeping your projects and their configuration files ordered and maintainable.
+SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSON and Environment vars), it will help you in keeping your projects and their configuration files ordered and maintainable.
 
 ## Installation
 
@@ -24,7 +24,7 @@ go get -u github.com/BurntSushi/toml
 go get -u github.com/oblq/sprbox
 ```
 
-## Agnostic config unmarshaling
+## Agnostic, layered, config unmarshaling
 
 Given that project structure:
 ```
@@ -37,10 +37,16 @@ Given that project structure:
 pg.yaml:
 
 ```yaml
+port: 2222
+```
+
+pg.production.yaml:
+
+```yaml
 port: 2345
 ```
 
-...to unmarshal that config file to a struct is simple like that:
+...to unmarshal that config files to a struct is simple like that:
 
 ```go
 package main
@@ -62,7 +68,11 @@ type PostgresConfig struct{
 } 
 
 func main() {
-	os.Setenv("POSTGRES_PASSWORD", "only_known_by_me123")
+	os.Setenv("POSTGRES_PASSWORD", "123_only_known_by_me")
+	
+	// Setting 'production' build-environment,
+	// so 'pg.production.yml' will override 'pg.yml'.
+	sprbox.BUILDENV = sprbox.Production.String() // -> 'production'
 	
 	var pgConfig PostgresConfig	
 	if err := sprbox.LoadConfig(&pgConfig, "config/pg.yaml"); err != nil {
@@ -73,7 +83,7 @@ func main() {
 	// Config{
 	//      DB:         "postgres"
 	//      User:       "postgres"
-	//      Password:   "only_known_by_me123"
+	//      Password:   "123_only_known_by_me"
 	//      Port:       2345
 	// }
 }
@@ -81,6 +91,19 @@ func main() {
 
 Depending on the [build environment](#the-build-environment), trying to load `config/pg.yml` will also load `config/pg.<environment>.yml` (eg.: `cfg.production.yml`).  
 If any environment-specific file will be found, for the current environment, that will override the universal one.  
+
+It is possible to load multiple separated config files, also of different type, so components configs can be reused:
+
+```go
+func main() {
+	// File extension can be omitted:
+	var pusher PushNotifications	
+	sprbox.LoadConfig(&pusher,
+		"config/pusher", 
+		"config/pg",
+		)
+}
+```
 
 The file extension in the file path can be omitted, since sprbox can load YAML, TOML and JSON files it will search for `cfg.*` using RegEx, the config file itself must have an extension.  
 
@@ -94,10 +117,18 @@ To load a configuration file a struct must implement the [configurable](#using-y
 ```go
 type MyToolBox struct {
     // By default sprbox will look for a config file named 
-    // like the struct field (ATool.*, case sensitive).
-    ATool Tool
+    // like the struct field (Pusher.*, case sensitive).
+    Pusher PushNotifications
+    
+    // You can define one or more specific config file(s), 
+    // separated by the pipe symbol: |.
+    // The latest will overrides others, from right to left,
+    // you can see that using sprbox.SetDebug(true).
+    // sprbox will always try to find the file named
+    // like the struct field first (Pusher2.*).
+    // File extension can be omitted.
+    Pusher2 PushNotifications `sprbox:"pusher|postgres"`
 
-    // Define the config file explicitly, extension can be omitted.
     // workerful.<environment>.yml will override workerful.yml
     // for the given env, if exist.
     WP *workerful.Workerful `sprbox:"workerful.yml"`
@@ -243,10 +274,10 @@ type ToolBox struct {
 var App ToolBox
 
 func init() {
-	// ./config must contain SX.(.yml, .yaml, .json, .toml) config file
+	// ./config must contain SX.(yml|yaml|json|toml) config file in that case.
 	sprbox.LoadToolBox(&App, "./config") 
 	
-	// call any of the packagex.StructX's funcs on SX
+	// Call any of the packagex.StructX's funcs on SX.
 	// Initialized and configured.
 	App.SX.DoSomething()
 }
