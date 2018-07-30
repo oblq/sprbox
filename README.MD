@@ -1,13 +1,12 @@
 # SpareBox 
 
-![GitHub tag](https://img.shields.io/github/tag/oblq/sprbox.svg)
 [![awesome](https://raw.githubusercontent.com/istio/fortio/master/docs/mentioned-badge.svg?sanitize=true)](https://github.com/avelino/awesome-go)
 [![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
 [![codecov](https://codecov.io/gh/oblq/sprbox/branch/master/graph/badge.svg)](https://codecov.io/gh/oblq/sprbox)
 [![Go Report Card](https://goreportcard.com/badge/github.com/oblq/sprbox)](https://goreportcard.com/report/github.com/oblq/sprbox)
 [![GoDoc](https://godoc.org/github.com/oblq/sprbox?status.svg)](https://godoc.org/github.com/oblq/sprbox)
+![GitHub tag](https://img.shields.io/github/tag/oblq/sprbox.svg)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
-
 
 
 Dynamically create toolbox singletons with automatic configuration based on your build environment.  
@@ -16,7 +15,6 @@ SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSO
 ## Installation
 
 ```sh
-# only needed for the config parser:
 go get -u gopkg.in/yaml.v2
 go get -u github.com/BurntSushi/toml
 
@@ -218,7 +216,7 @@ To start using your package in `sprbox` you just need to implement the `configur
 
 ```go
 type configurable interface {
-	SBConfig([]byte) error
+	SpareConfig([]byte) error
 }
 ```
 
@@ -229,10 +227,10 @@ type MyPackage struct {
 	Something string `yaml:"something"`
 }
 
-// SBConfig is the sprbox 'configurable' interface implementation.
+// SpareConfig is the sprbox 'configurable' interface implementation.
 // (mp *MyPackage) is automatically initialized with a pointer to MyPackage{}
 // so it will never be nil, but needs configuration.
-func (mp *MyPackage) SBConfig(configData []byte) (err error) {
+func (mp *MyPackage) SpareConfig(configData []byte) (err error) {
 	var config *MyPackageConfig
 	err = sprbox.Unmarshal(configData, &config)
 	mp.DoSomethingWithConfig(config)
@@ -252,11 +250,11 @@ type StructX struct {
 	*packagex.StructX
 }
 
-// since the config file format is known here
+// Since the config file format is known here
 // you can use yaml, toml or json unmarshaler directly.
-// anyway sprbox.Unmarshal() will recognize any of those formats
+// Anyway sprbox.Unmarshal() will recognize any of those formats,
 // allowing you to also use different config files format.
-func (sx *StructX) SBConfig(configData []byte) (err error) {
+func (sx *StructX) SpareConfig(configData []byte) (err error) {
 	var cfg packagex.Config
 	err = sprbox.Unmarshal(configData, &cfg)    	
 	sx.StructX = packagex.NewStructX(cfg)

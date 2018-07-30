@@ -12,8 +12,8 @@ type Tool struct {
 	ConfigPath string
 }
 
-// SBConfig is the 'configurable' interface implementation.
-func (c *Tool) SBConfig(config []byte) error {
+// SpareConfig is the 'configurable' interface implementation.
+func (c *Tool) SpareConfig(config []byte) error {
 	Unmarshal(config, c)
 	return nil
 }
@@ -23,8 +23,8 @@ type ToolError struct {
 	ConfigPath string
 }
 
-// SBConfig is the 'configurable' interface implementation.
-func (c *ToolError) SBConfig(config []byte) error {
+// SpareConfig is the 'configurable' interface implementation.
+func (c *ToolError) SpareConfig(config []byte) error {
 	return errors.New("fake error for test")
 }
 
@@ -255,8 +255,8 @@ func TestNotAStructErr(t *testing.T) {
 // ToolNotAStruct is a struct implementing 'configurable' interface.
 type ToolNotAStruct []string
 
-// SBConfig is the 'configurable' interface implementation.
-func (c *ToolNotAStruct) SBConfig(config []byte) error {
+// SpareConfig is the 'configurable' interface implementation.
+func (c *ToolNotAStruct) SpareConfig(config []byte) error {
 	return nil
 }
 

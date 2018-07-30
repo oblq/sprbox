@@ -6,7 +6,7 @@ import (
 
 // ToolBox is the struct to initialize with sprbox.
 // It contains pluggable libraries, implementing the
-// 'configurable' interface: `func SBConfig([]byte) error`.
+// 'configurable' interface: `func SpareConfig([]byte) error`.
 type ToolBox struct {
 	// By default sprbox will look for a file named like the
 	// struct field name (WPool.*, case sensitive).
