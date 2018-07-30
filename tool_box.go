@@ -77,23 +77,23 @@ func loadField(configPath string, f *reflect.StructField, t reflect.Type, v refl
 			v.Set(newV)
 		}
 
-		configFile := f.Name
-		if omit := parseTags(&configFile, f); omit {
+		configFiles := []string{f.Name}
+		if omit := parseTags(&configFiles, f); omit {
 			break
 		}
 
-		if err := configure(configPath, configFile, f, t, &v); err != nil {
+		if err := configure(configPath, configFiles, f, t, &v); err != nil {
 			return err
 		}
 
 	case reflect.Struct:
-		configFile := f.Name
-		if omit := parseTags(&configFile, f); omit {
+		configFiles := []string{f.Name}
+		if omit := parseTags(&configFiles, f); omit {
 			break
 		}
 
 		newV := reflect.New(t)
-		if err := configure(configPath, configFile, f, t, &newV); err != nil {
+		if err := configure(configPath, configFiles, f, t, &newV); err != nil {
 			return err
 		}
 		v.Set(newV.Elem())
@@ -110,7 +110,7 @@ func loadField(configPath string, f *reflect.StructField, t reflect.Type, v refl
 // the field name without extension will be returned in that case,
 // loadConfig will look for a file with that prefix and any kind
 // of extension, if necessary (no '.' in file name).
-func parseTags(configFile *string, f *reflect.StructField) (omit bool) {
+func parseTags(configFiles *[]string, f *reflect.StructField) (omit bool) {
 	tag, found := f.Tag.Lookup(sftKey)
 	if !found {
 		return
@@ -121,10 +121,11 @@ func parseTags(configFile *string, f *reflect.StructField) (omit bool) {
 		return true
 	}
 
-	fields := strings.Split(tag, ",")
-	for _, flag := range fields {
+	tagFields := strings.Split(tag, ",")
+	for _, flag := range tagFields {
 		if flag != sftOmit {
-			*configFile = flag
+			files := strings.Split(flag, "|")
+			*configFiles = append(*configFiles, files...)
 		}
 	}
 
@@ -133,14 +134,18 @@ func parseTags(configFile *string, f *reflect.StructField) (omit bool) {
 
 // configure will call the 'configurable' interface
 // on the passed field struct.
-func configure(configPath string, configFileNoExt string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
+func configure(configPath string, configFiles []string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
 	if _, isConfigurable := v.Interface().(configurable); !isConfigurable {
 		printLoadResult(f, t, errNoConfigurable)
 		return nil
 	}
 
-	configFilePath := filepath.Join(configPath, configFileNoExt)
-	bytes, err := mergedConfigs(configFilePath)
+	// add configPath to any file name
+	for i, file := range configFiles {
+		configFiles[i] = filepath.Join(configPath, file)
+	}
+
+	bytes, err := mergedConfigs(configFiles)
 	if err != nil {
 		printLoadResult(f, t, err)
 		return nil

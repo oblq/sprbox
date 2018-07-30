@@ -14,7 +14,7 @@ type ToolBox struct {
 	WPoolOmitted Workerful `sprbox:"omit"`
 
 	Tool1    Tool
-	Tool1Ptr *Tool `sprbox:"Tool1.yml"`
+	Tool1Ptr *Tool `sprbox:"Tool1|Tool2"`
 
 	// Optionally pass a config file name in the tag.
 	Tool2 Tool

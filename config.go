@@ -79,73 +79,78 @@ func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string
 //  - '<path>/<file>.<environment>(.* || <the_provided_extension>)'
 //
 // The latest found files will override previous.
-func configFilesByEnv(filePath string) (files []string) {
-	configPath, file := filepath.Split(filePath)
-	if len(configPath) == 0 {
-		configPath = "./"
+func configFilesByEnv(files ...string) (foundFiles []string) {
+	for _, file := range files {
+		configPath, file := filepath.Split(file)
+		if len(configPath) == 0 {
+			configPath = "./"
+		}
+
+		var regexEnv *regexp.Regexp
+		var regex *regexp.Regexp
+
+		ext := filepath.Ext(file)
+		extTrimmed := strings.TrimSuffix(file, ext)
+		if len(ext) == 0 {
+			ext = regexExt
+			debugPrintf(darkGrey("\nlooking for '%s%s' in '%s'..."), file, regexExt, configPath)
+		} else {
+			debugPrintf(darkGrey("\nlooking for '%s' in '%s'..."), file, configPath)
+		}
+
+		format := "^%s%s$"
+		if !FileSearchCaseSensitive {
+			format = "(?i)(^%s)%s$"
+		}
+		regexEnv = regexp.MustCompile(fmt.Sprintf(format, fmt.Sprintf("%s.%s", extTrimmed, Env().String()), ext))
+		regex = regexp.MustCompile(fmt.Sprintf(format, extTrimmed, ext))
+
+		// look for the config file in the config path (eg.: tool.yml)
+		if matchedFiles := walkConfigPath(configPath, regex); len(matchedFiles) > 0 {
+			foundFiles = append(foundFiles, matchedFiles)
+		}
+
+		// look for the env config file in the config path (eg.: tool.development.yml)
+		if matchedFiles := walkConfigPath(configPath, regexEnv); len(matchedFiles) > 0 {
+			foundFiles = append(foundFiles, matchedFiles)
+		}
 	}
 
-	var regexEnv *regexp.Regexp
-	var regex *regexp.Regexp
-
-	ext := filepath.Ext(file)
-	extTrimmed := strings.TrimSuffix(file, ext)
-	if len(ext) == 0 {
-		ext = regexExt
-		debugPrintf(darkGrey("\nLooking for '%s.*' in '%s':"), file, configPath)
-	} else {
-		debugPrintf(darkGrey("\nLooking for '%s' in '%s':"), file, configPath)
-	}
-
-	format := "^%s%s$"
-	if !FileSearchCaseSensitive {
-		format = "(?i)(^%s)%s$"
-	}
-	regexEnv = regexp.MustCompile(fmt.Sprintf(format, fmt.Sprintf("%s.%s", extTrimmed, Env().String()), ext))
-	regex = regexp.MustCompile(fmt.Sprintf(format, extTrimmed, ext))
-
-	// look for the config file in the config path (eg.: tool.yml)
-	if matchedFiles := walkConfigPath(configPath, regex); len(matchedFiles) > 0 {
-		files = append(files, matchedFiles)
-	}
-
-	// look for the env config file in the config path (eg.: tool.development.yml)
-	if matchedFiles := walkConfigPath(configPath, regexEnv); len(matchedFiles) > 0 {
-		files = append(files, matchedFiles)
-	}
-
-	debugPrintf("\n%s", strings.Join(files, green(" <- ")))
+	debugPrintf("\n%s", strings.Join(foundFiles, green(" <- ")))
 	return
 }
 
 // mergedConfigs returns all the matched config files merged in the right order.
 // (eg.: conf.<environment>.yml -> conf.yml)
-func mergedConfigs(filePath string) (data []byte, err error) {
-	files := configFilesByEnv(filePath)
-	if len(files) == 0 {
-		return nil, fmt.Errorf("config file(s) not found for '%s'", filePath)
+func mergedConfigs(files []string) (data []byte, err error) {
+	foundFiles := configFilesByEnv(files...)
+	if len(foundFiles) == 0 {
+		return nil, fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
 	}
 
 	var merged map[string]interface{}
-	for _, file := range files {
+	for _, file := range foundFiles {
 		if err := unmarshal(file, nil, &merged); err != nil {
 			return nil, err
 		}
 	}
 
 	debugPrintf(green(" = ")+"%+v\n", green(dump(merged)))
-	ext := filepath.Ext(files[0])
+	ext := filepath.Ext(foundFiles[0])
 
 	switch {
 	case regexp.MustCompile(regexYAML).MatchString(ext):
 		data, err = yaml.Marshal(merged)
+
 	case regexp.MustCompile(regexTOML).MatchString(ext):
 		var buffer bytes.Buffer
 		err = toml.NewEncoder(&buffer).Encode(merged)
 		data = buffer.Bytes()
+
 	case regexp.MustCompile(regexJSON).MatchString(ext):
 		data, err = json.Marshal(merged)
 	}
+
 	return
 }
 
@@ -222,8 +227,8 @@ func parseConfigTags(config interface{}) error {
 		}
 
 		tag := ft.Tag.Get(sftKey)
-		fields := strings.Split(tag, ",")
-		for _, flag := range fields {
+		tagFields := strings.Split(tag, ",")
+		for _, flag := range tagFields {
 
 			kv := strings.Split(flag, "=")
 
@@ -307,9 +312,9 @@ func Unmarshal(in []byte, out interface{}) (err error) {
 // eventually overriding it with an environment specific one,
 // if present, to the provided struct pointer.
 // Will also parse struct flags.
-func LoadConfig(config interface{}, filePath string) (err error) {
+func LoadConfig(config interface{}, files ...string) (err error) {
 	var in []byte
-	if in, err = mergedConfigs(filePath); err != nil {
+	if in, err = mergedConfigs(files); err != nil {
 		return
 	}
 
