@@ -33,13 +33,13 @@ var (
 
 	errOmit = errors.New("omitted")
 
-	errNoConfigurable = errors.New(`does not implement the 'configurable' interface: func SBConfig([]byte) error`)
+	errNoConfigurable = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]byte) error`)
 
 	errConfigFileNotFound = errors.New("config file not found")
 )
 
 type configurable interface {
-	SBConfig([]byte) error
+	SpareConfig([]byte) error
 }
 
 // LoadToolBox initialize and (eventually) configure the provided struct pointer
@@ -151,7 +151,7 @@ func configure(configPath string, configFiles []string, f *reflect.StructField, 
 		return nil
 	}
 
-	if err := v.Interface().(configurable).SBConfig(bytes); err != nil {
+	if err := v.Interface().(configurable).SpareConfig(bytes); err != nil {
 		printLoadResult(f, t, err)
 		return err
 	}

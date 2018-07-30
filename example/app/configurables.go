@@ -14,8 +14,8 @@ type Tool struct {
 	Text string `yaml:"text"`
 }
 
-// SBConfig is the 'configurable' interface implementation.
-func (t *Tool) SBConfig(configData []byte) (err error) {
+// SpareConfig is the 'configurable' interface implementation.
+func (t *Tool) SpareConfig(configData []byte) (err error) {
 	// since the config file format is known here
 	// you can use yaml, toml or json unmarshaler directly.
 	// sprbox.Unmarshal() will recognize any of those formats

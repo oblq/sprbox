@@ -8,7 +8,7 @@ import (
 // Example:
 // How to embed a third-party package in sprbox.
 //
-// workerful.Workerful already implement `func SBConfig([]byte) error`
+// workerful.Workerful already implement `func SpareConfig([]byte) error`
 // `configurable` interface, but that's only for demonstration.
 //
 // Workerful embed workerful.Workerful adding
@@ -18,7 +18,7 @@ type Workerful struct {
 	workerful.Workerful
 }
 
-func (wp *Workerful) SBConfig(configData []byte) (err error) {
+func (wp *Workerful) SpareConfig(configData []byte) (err error) {
 	// since the config file format is known here
 	// you can use yaml, toml or json unmarshaler directly.
 	// sprbox.Unmarshal() will recognize any of those formats
