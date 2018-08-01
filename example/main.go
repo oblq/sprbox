@@ -23,7 +23,7 @@ func main() {
 	}
 	app.Shared.WPoolOmitted.Workerful = *workerful.New("", &cfg)
 	app.Shared.WPoolOmitted.PushFunc(func() error {
-		println("printed from a job in worker-pool...")
+		fmt.Println("printed from a job in worker-pool...")
 		return nil
 	})
 

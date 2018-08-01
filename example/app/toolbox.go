@@ -39,6 +39,8 @@ func init() {
 	// optionally turn off colors in logs
 	//sprbox.ColoredLogs(false)
 
+	sprbox.PrintInfo()
+
 	// set debug mode
 	sprbox.SetDebug(true)
 

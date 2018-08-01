@@ -106,7 +106,6 @@ To read the configuration at runtime sprbox can load multiple config files on a 
 mergedConfigMap, err := sprbox.LoadConfigMap("config/cfg1.yml", "config/cfg2.toml", "config/cfg3.json")
 ```
 
-
 ## ToolBox autoload (init and config)
 
 ##### 1. Define your toolbox.
@@ -149,7 +148,7 @@ As for the `sprbox.LoadConfig()` func, also in `sprbox.LoadToolBox()` environmen
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
-![loading](./screen.png)
+![loading](./ScreenShot.png)
 
 ## The build environment
  
