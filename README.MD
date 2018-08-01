@@ -15,10 +15,6 @@ SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSO
 ## Installation
 
 ```sh
-go get -u gopkg.in/yaml.v2
-go get -u github.com/BurntSushi/toml
-
-# install sprbox:
 go get -u github.com/oblq/sprbox
 ```
 
