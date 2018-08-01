@@ -327,3 +327,22 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 
 	return
 }
+
+// Map returns a map of all the matched config files merged in the right order.
+// Build-environment specific files will override universal ones.
+// The latest files will override the earliest, from right to left.
+//func Map(files ...string) (layeredMap map[string]interface{}, err error) {
+//	foundFiles := configFilesByEnv(files...)
+//	if len(foundFiles) == 0 {
+//		return nil, fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
+//	}
+//
+//	for _, file := range foundFiles {
+//		if err = unmarshal(file, nil, &layeredMap); err != nil {
+//			return nil, err
+//		}
+//	}
+//	debugPrintf(green(" = ")+"%+v\n", green(dump(layeredMap)))
+//
+//	return
+//}

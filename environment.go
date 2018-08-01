@@ -53,8 +53,6 @@ func init() {
 	Testing.compileExps()
 	Development.compileExps()
 	Local.compileExps()
-
-	loadTag()
 }
 
 var inferredBy string
