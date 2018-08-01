@@ -5,10 +5,11 @@
 package sprbox
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"encoding/json"
 )
 
 // small slant
@@ -51,7 +52,7 @@ func ColoredLogs(colored bool) {
 	coloredLogs = colored
 }
 
-// Debug will print detailed logs in console.
+// SetDebug will print detailed logs in console.
 func SetDebug(anabled bool) {
 	debug = anabled
 	PrintInfo()
@@ -78,6 +79,8 @@ func debugPrintf(format string, args ...interface{}) {
 }
 
 func dump(v interface{}) string {
+	//d, _ := yaml.Marshal(v)
+	//return string(d)
 	b, _ := json.MarshalIndent(v, "", "  ")
 	return string(b)
 }

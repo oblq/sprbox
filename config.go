@@ -42,9 +42,10 @@ const (
 // walkConfigPath look for a file matching the passed regex skipping sub-directories.
 func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string) {
 	_ = filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
-		//if info == nil {
-		//	return filepath.SkipDir
-		//}
+		// nil if the path does not exist
+		if info == nil {
+			return filepath.SkipDir
+		}
 
 		if info.IsDir() && info.Name() != filepath.Base(configPath) {
 			return filepath.SkipDir
@@ -81,7 +82,7 @@ func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string
 // The latest found files will override previous.
 func configFilesByEnv(files ...string) (foundFiles []string) {
 	for _, file := range files {
-		configPath, file := filepath.Split(file)
+		configPath, fileName := filepath.Split(file)
 		if len(configPath) == 0 {
 			configPath = "./"
 		}
@@ -89,13 +90,13 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 		var regexEnv *regexp.Regexp
 		var regex *regexp.Regexp
 
-		ext := filepath.Ext(file)
-		extTrimmed := strings.TrimSuffix(file, ext)
+		ext := filepath.Ext(fileName)
+		extTrimmed := strings.TrimSuffix(fileName, ext)
 		if len(ext) == 0 {
 			ext = regexExt
-			debugPrintf(darkGrey("\nlooking for '%s%s' in '%s'..."), file, regexExt, configPath)
+			debugPrintf(darkGrey("\nlooking for '%s%s' in '%s'..."), fileName, regexExt, configPath)
 		} else {
-			debugPrintf(darkGrey("\nlooking for '%s' in '%s'..."), file, configPath)
+			debugPrintf(darkGrey("\nlooking for '%s' in '%s'..."), fileName, configPath)
 		}
 
 		format := "^%s%s$"
@@ -130,7 +131,7 @@ func mergedConfigs(files []string) (data []byte, err error) {
 
 	var merged map[string]interface{}
 	for _, file := range foundFiles {
-		if err := unmarshal(file, nil, &merged); err != nil {
+		if err = unmarshal(file, nil, &merged); err != nil {
 			return nil, err
 		}
 	}
@@ -325,5 +326,28 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 	defer fmt.Print("\n")
 	defer debugPrintf("%s%s\n", "Loaded config: ", green(dump(config)))
 
+	return
+}
+
+// LoadConfigMap returns a map of all the matched config files merged in the right order.
+// Build-environment specific files will override universal ones.
+// The latest files will override the earliest, from right to left.
+//
+// Keep in mind that:
+// 1. yaml files uses lowercased keys by default, unless you define a custom field tag.
+// 2. embedded structs would be decoded as map[interface{}]interface{} in yaml,
+// not map[string]interface{} as in json or toml.
+func LoadConfigMap(files ...string) (layeredMap map[string]interface{}, err error) {
+	foundFiles := configFilesByEnv(files...)
+	if len(foundFiles) == 0 {
+		return layeredMap, fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
+	}
+
+	for _, file := range foundFiles {
+		if err = unmarshal(file, nil, &layeredMap); err != nil {
+			return
+		}
+	}
+	debugPrintf(green(" = ")+"%+v\n", green(dump(layeredMap)))
 	return
 }
