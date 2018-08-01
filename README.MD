@@ -92,14 +92,20 @@ It is possible to load multiple separated config files, also of different type, 
 func main() {
 	// File extension can be omitted:
 	var pusher PushNotifications	
-	sprbox.LoadConfig(&pusher,
-		"config/pusher", 
-		"config/pg",
-		)
+	sprbox.LoadConfig(&pusher, "config/pusher", "config/pg")
 }
 ```
 
 The file extension in the file path can be omitted, since sprbox can load YAML, TOML and JSON files it will search for `cfg.*` using RegEx, the config file itself must have an extension.  
+
+To read the configuration at runtime sprbox can load multiple config files on a map, anyway keep in mind that:
+1. YAML files uses lowercased keys by default, unless you define a custom field tag (struct field `Postgres` will become `"postgres"`, while in TOML or JSON it will remain `"Postgres"`).
+2. Embedded structs would be decoded as `map[interface{}]interface{}` in YAML, not `map[string]interface{}` as in JSON or TOML.
+
+```go
+mergedConfigMap, err := sprbox.LoadConfigMap("config/cfg1.yml", "config/cfg2.toml", "config/cfg3.json")
+```
+
 
 ## ToolBox autoload (init and config)
 

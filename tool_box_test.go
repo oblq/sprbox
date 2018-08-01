@@ -247,7 +247,7 @@ func TestBoxAfterConfig(t *testing.T) {
 
 func TestNotAStructErr(t *testing.T) {
 	test := []string{"test"}
-	if err := LoadToolBox(&test, configPath); err != errNotAStructPointer {
+	if err := LoadToolBox(&test, configPath); err != errInvalidPointer {
 		t.Error(err)
 	}
 }

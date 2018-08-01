@@ -382,95 +382,148 @@ func TestEnvironmentFiles(t *testing.T) {
 	}
 }
 
-//func TestMapYAML(t *testing.T) {
-//	config := defaultConfig()
-//	createYAML(config, "config1.yaml", t)
-//	config.String = "overriden1"
-//	createYAML(config, "config2.yaml", t)
-//	config.PG.DB = "overriden2"
-//	createYAML(config, "config3.yaml", t)
-//	defer removeConfigFiles(t)
-//
-//	SetDebug(true)
-//
-//	configMap, err := Map(
-//		filepath.Join(configPath, "config1.yaml"),
-//		filepath.Join(configPath, "config2.yaml"),
-//		filepath.Join(configPath, "config3.yaml"),
-//	)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	if configMap["string"] != "overriden1" {
-//		t.Error("value not overriden")
-//	}
-//
-//	if configMap["pg"].(map[interface{}]interface{})["db"] != "overriden2" {
-//		t.Error("value not overriden")
-//	}
-//
-//	SetDebug(false)
-//}
-//
-//func TestMapJSON(t *testing.T) {
-//	config := defaultConfig()
-//	createJSON(config, "config1.json", t)
-//	config.String = "overriden1"
-//	createJSON(config, "config2.json", t)
-//	config.PG.DB = "overriden2"
-//	createJSON(config, "config3.json", t)
-//	defer removeConfigFiles(t)
-//
-//	SetDebug(true)
-//
-//	configMap, err := Map(
-//		filepath.Join(configPath, "config1.json"),
-//		filepath.Join(configPath, "config2.json"),
-//		filepath.Join(configPath, "config3.json"),
-//	)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	if configMap["String"] != "overriden1" {
-//		t.Error("value not overriden")
-//	}
-//
-//	if configMap["PG"].(map[string]interface{})["DB"] != "overriden2" {
-//		t.Error("value not overriden")
-//	}
-//
-//	SetDebug(false)
-//}
-//
-//func TestMapTOML(t *testing.T) {
-//	config := defaultConfig()
-//	createTOML(config, "config1.toml", t)
-//	config.String = "overriden1"
-//	createTOML(config, "config2.toml", t)
-//	config.PG.DB = "overriden2"
-//	createTOML(config, "config3.toml", t)
-//	defer removeConfigFiles(t)
-//
-//	SetDebug(true)
-//
-//	configMap, err := Map(
-//		filepath.Join(configPath, "config1.toml"),
-//		filepath.Join(configPath, "config2.toml"),
-//		filepath.Join(configPath, "config3.toml"),
-//	)
-//	if err != nil {
-//		t.Error(err)
-//	}
-//
-//	if configMap["String"] != "overriden1" {
-//		t.Error("value not overriden")
-//	}
-//
-//	if configMap["PG"].(map[string]interface{})["DB"] != "overriden2" {
-//		t.Error("value not overriden")
-//	}
-//
-//	SetDebug(false)
-//}
+func TestMapYAML(t *testing.T) {
+	config := defaultConfig()
+	createYAML(config, "config1.yaml", t)
+	config.String = "overriden1"
+	createYAML(config, "config2.yaml", t)
+	config.PG.DB = "overriden2"
+	createYAML(config, "config3.yaml", t)
+	defer removeConfigFiles(t)
+
+	SetDebug(true)
+
+	configMap, err := LoadConfigMap(
+		filepath.Join(configPath, "config1.yaml"),
+		filepath.Join(configPath, "config2.yaml"),
+		filepath.Join(configPath, "config3.yaml"),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	dump(configMap)
+
+	if configMap["string"] != "overriden1" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["pg"].(map[interface{}]interface{})["db"] != "overriden2" {
+		t.Error("value not overriden")
+	}
+
+	SetDebug(false)
+}
+
+func TestMapJSON(t *testing.T) {
+	config := defaultConfig()
+	createJSON(config, "config1.json", t)
+	config.String = "overriden1"
+	createJSON(config, "config2.json", t)
+	config.PG.DB = "overriden2"
+	createJSON(config, "config3.json", t)
+	defer removeConfigFiles(t)
+
+	SetDebug(true)
+
+	configMap, err := LoadConfigMap(
+		filepath.Join(configPath, "config1.json"),
+		filepath.Join(configPath, "config2.json"),
+		filepath.Join(configPath, "config3.json"),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if configMap["String"] != "overriden1" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["PG"].(map[string]interface{})["DB"] != "overriden2" {
+		t.Error("value not overriden")
+	}
+
+	SetDebug(false)
+}
+
+func TestMapTOML(t *testing.T) {
+	config := defaultConfig()
+	createTOML(config, "config1.toml", t)
+	config.String = "overriden1"
+	createTOML(config, "config2.toml", t)
+	config.PG.DB = "overriden2"
+	createTOML(config, "config3.toml", t)
+	defer removeConfigFiles(t)
+
+	SetDebug(true)
+
+	configMap, err := LoadConfigMap(
+		filepath.Join(configPath, "config1.toml"),
+		filepath.Join(configPath, "config2.toml"),
+		filepath.Join(configPath, "config3.toml"),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if configMap["String"] != "overriden1" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["PG"].(map[string]interface{})["DB"] != "overriden2" {
+		t.Error("value not overriden")
+	}
+
+	SetDebug(false)
+}
+
+func TestMapMixed(t *testing.T) {
+	config := defaultConfig()
+	config.PG.DB = "overridenyml"
+	createYAML(config, "config1.yml", t)
+	config.String = "overriden1"
+	createTOML(config, "config2.toml", t)
+	config.PG.DB = "overriden2"
+	createJSON(config, "config3.json", t)
+	defer removeConfigFiles(t)
+
+	SetDebug(true)
+
+	configMap, err := LoadConfigMap(
+		filepath.Join(configPath, "config1.yml"),
+		filepath.Join(configPath, "config2.toml"),
+		filepath.Join(configPath, "config3.json"),
+	)
+	if err != nil {
+		t.Error(err)
+	}
+
+	//fmt.Printf("\ndump: %v\n", configMap)
+
+	if configMap["string"] != "sprbox" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["pg"].(map[interface{}]interface{})["db"] != "overridenyml" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["String"] != "overriden1" {
+		t.Error("value not overriden")
+	}
+
+	if configMap["PG"].(map[string]interface{})["DB"] != "overriden2" {
+		t.Error("value not overriden")
+	}
+
+	SetDebug(false)
+}
+
+func TestMapNoFiles(t *testing.T) {
+	_, err := LoadConfigMap(filepath.Join(configPath, "config.yml"))
+	if err != nil {
+		t.Log(err)
+	} else {
+		t.Error("unexistent file does not return error")
+	}
+}

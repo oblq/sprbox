@@ -9,32 +9,16 @@ import (
 	"strings"
 )
 
-// struct field flags
+// Struct field flags.
 const (
 	sftOmit = "omit"
 )
 
+// Errors.
 var (
-	errNotAStructPointer = errors.New("<box> should be a pointer to a struct")
-
-	errInvalidPointer = errors.New(`
-	
-	invalid <box> pointer, don't do:
-		var MyAppToolBox *Box
-		InitAndConfig(MyAppToolBox, "path/to/config")
-	
-	Init the pointer before:
-		var MyAppToolBox = &Box{}
-		InitAndConfig(MyAppToolBox, "path/to/config")
-	
-	...or pass a new pointer:
-		var MyAppToolBox Box
-		InitAndConfig(&MyAppToolBox, "path/to/config")`)
-
-	errOmit = errors.New("omitted")
-
-	errNoConfigurable = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]byte) error`)
-
+	errInvalidPointer     = errors.New("<box> parameter should be a struct pointer")
+	errOmit               = errors.New("omitted")
+	errNoConfigurable     = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]byte) error`)
 	errConfigFileNotFound = errors.New("config file not found")
 )
 
@@ -49,9 +33,9 @@ func LoadToolBox(toolBox interface{}, configPath string) error {
 	v := reflect.ValueOf(toolBox).Elem()
 
 	if t.Kind() != reflect.Struct {
-		return errNotAStructPointer
-	} else if !v.CanSet() || !v.IsValid() {
 		return errInvalidPointer
+	} else if !v.CanSet() || !v.IsValid() {
+		return errInvalidPointer // nil pointer
 	}
 
 	//debugPrintf("ORIGINAL BOX: %#v\n", toolBox)

@@ -96,7 +96,7 @@ func Env() *Environment {
 	}
 }
 
-// SubPathByEnv returns <path>/<environment>
+// EnvSubDir returns <path>/<environment>
 func EnvSubDir(path string) string {
 	return filepath.Join(path, Env().String())
 }
