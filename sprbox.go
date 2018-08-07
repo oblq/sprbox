@@ -9,7 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"encoding/json"
+	yaml "gopkg.in/yaml.v1"
 )
 
 // small slant
@@ -28,37 +28,45 @@ const (
 )
 
 var (
-	// Debug will print some useful info for debug.
-	debug = false
+	debug   = false
+	verbose = false
 
-	// ColoredLog enable or disable colors in console.
+	// coloredLogs enable or disable colors in console.
 	coloredLogs = true
 
-	// FileSearchCaseSensitive determine config files search mode.
-	FileSearchCaseSensitive = true
+	// fileSearchCaseSensitive determine config files search mode.
+	fileSearchCaseSensitive = true
 )
-
-//var testRegexp = regexp.MustCompile(`_test|(\.test$)`)
-
-func init() {
-	// automatic debug during tests
-	//if testRegexp.MatchString(os.Args[0]) {
-	//	Debug()
-	//}
-}
-
-// ColoredLogs turn on/off colors in console.
-func ColoredLogs(colored bool) {
-	coloredLogs = colored
-}
 
 // SetDebug will print detailed logs in console.
 func SetDebug(enabled bool) {
 	debug = enabled
 }
 
-// PrintInfo print some useful info about
-// the environment and git.
+func debugPrintf(format string, args ...interface{}) {
+	if debug {
+		fmt.Printf(format, args...)
+	}
+}
+
+// verbose mode can only be set here
+func verbosePrintf(format string, args ...interface{}) {
+	if verbose {
+		fmt.Printf(format, args...)
+	}
+}
+
+func dump(v interface{}) string {
+	d, err := yaml.Marshal(v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return string(d)
+	//b, _ := json.MarshalIndent(v, "", "  ")
+	//return string(b)+"\n"
+}
+
+// PrintInfo print some useful info about the environment and git.
 func PrintInfo() {
 	version := ""
 	sprboxRepo := NewRepository(filepath.Join(os.Getenv("GOPATH"), "/src/github.com/oblq/sprbox"))
@@ -71,15 +79,12 @@ func PrintInfo() {
 	VCS.PrintInfo()
 }
 
-func debugPrintf(format string, args ...interface{}) {
-	if debug {
-		fmt.Printf(format, args...)
-	}
+// SetColoredLogs toggle colors in console.
+func SetColoredLogs(colored bool) {
+	coloredLogs = colored
 }
 
-func dump(v interface{}) string {
-	//d, _ := yaml.Marshal(v)
-	//return string(d)
-	b, _ := json.MarshalIndent(v, "", "  ")
-	return string(b)
+// SetFileSearchCaseSensitive toggle case sensitive cinfig files search.
+func SetFileSearchCaseSensitive(caseSensitive bool) {
+	fileSearchCaseSensitive = caseSensitive
 }

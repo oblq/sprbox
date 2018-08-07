@@ -1,7 +1,6 @@
 package sprbox
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -41,7 +40,7 @@ const (
 
 // walkConfigPath look for a file matching the passed regex skipping sub-directories.
 func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string) {
-	_ = filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
 		// nil if the path does not exist
 		if info == nil {
 			return filepath.SkipDir
@@ -62,9 +61,9 @@ func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string
 		return nil
 	})
 
-	//if err != nil {
-	//	debugPrintf("walkConfigPath error: %s", err.Error())
-	//}
+	if err != nil {
+		fmt.Println(err)
+	}
 	return
 }
 
@@ -100,7 +99,7 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 		}
 
 		format := "^%s%s$"
-		if !FileSearchCaseSensitive {
+		if !fileSearchCaseSensitive {
 			format = "(?i)(^%s)%s$"
 		}
 		regexEnv = regexp.MustCompile(fmt.Sprintf(format, fmt.Sprintf("%s.%s", extTrimmed, Env().String()), ext))
@@ -117,41 +116,11 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 		}
 	}
 
-	debugPrintf("\n%s", strings.Join(foundFiles, green(" <- ")))
-	return
-}
-
-// mergedConfigs returns all the matched config files merged in the right order.
-// (eg.: conf.<environment>.yml -> conf.yml)
-func mergedConfigs(files []string) (data []byte, err error) {
-	foundFiles := configFilesByEnv(files...)
-	if len(foundFiles) == 0 {
-		return nil, fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
+	if len(foundFiles) > 0 {
+		debugPrintf("\n%s %s", strings.Join(foundFiles, green(" <- ")), green("="))
+	} else {
+		debugPrintf("\n")
 	}
-
-	var merged map[string]interface{}
-	for _, file := range foundFiles {
-		if err = unmarshal(file, nil, &merged); err != nil {
-			return nil, err
-		}
-	}
-
-	debugPrintf(green(" = ")+"%+v\n", green(dump(merged)))
-	ext := filepath.Ext(foundFiles[0])
-
-	switch {
-	case regexp.MustCompile(regexYAML).MatchString(ext):
-		data, err = yaml.Marshal(merged)
-
-	case regexp.MustCompile(regexTOML).MatchString(ext):
-		var buffer bytes.Buffer
-		err = toml.NewEncoder(&buffer).Encode(merged)
-		data = buffer.Bytes()
-
-	case regexp.MustCompile(regexJSON).MatchString(ext):
-		data, err = json.Marshal(merged)
-	}
-
 	return
 }
 
@@ -170,184 +139,146 @@ func unmarshalYAML(data []byte, config interface{}, filePath string) (err error)
 	return yaml.Unmarshal(data, config)
 }
 
-// unmarshal will unmarshall the file or the file bytes to the 'out' interface.
-// 'filePath' is not mandatory, if used must include file extension.
-func unmarshal(filePath string, in []byte, out interface{}) (err error) {
-	if len(filePath) > 0 {
-		if in, err = ioutil.ReadFile(filePath); err != nil {
-			return err
-		}
-	}
-
-	ext := filepath.Ext(filePath)
-
-	if len(ext) > 0 {
-		switch {
-		case regexp.MustCompile(regexYAML).MatchString(ext):
-			return unmarshalYAML(in, out, filePath)
-		case regexp.MustCompile(regexTOML).MatchString(ext):
-			return unmarshalTOML(in, out, filePath)
-		case regexp.MustCompile(regexJSON).MatchString(ext):
-			return unmarshalJSON(in, out, filePath)
-		default:
-			return fmt.Errorf("unknown data format, can't unmarshal file: '%s'", filePath)
-		}
-	} else {
-		if err = unmarshalJSON(in, out, filePath); err == nil {
-			return nil
-		}
-
-		if err = unmarshalYAML(in, out, filePath); err == nil {
-			return nil
-		}
-
-		if err = unmarshalTOML(in, out, filePath); err == nil {
-			return nil
-		}
-
-		return fmt.Errorf("the provided data is incompatible with an interface of type %#v:\n(%s)",
-			out, strings.TrimSuffix(string(in), "\n"))
-	}
-}
-
 // parseConfigTags will process the struct field tags.
-func parseConfigTags(config interface{}) error {
-	configValue := reflect.Indirect(reflect.ValueOf(config))
-	if configValue.Kind() != reflect.Struct {
-		return errors.New("invalid config, should be struct: " + configValue.Kind().String())
-	}
+func parseConfigTags(elem interface{}, indent string) error {
+	elemValue := reflect.Indirect(reflect.ValueOf(elem))
 
-	configType := configValue.Type()
-	for i := 0; i < configType.NumField(); i++ {
+	switch elemValue.Kind() {
 
-		ft := configType.Field(i)
-		fv := configValue.Field(i)
+	case reflect.Struct:
+		elemType := elemValue.Type()
+		verbosePrintf("%sProcessing STRUCT: %s = %+v\n", indent, elemType.Name(), elem)
 
-		if !fv.CanAddr() || !fv.CanInterface() {
-			continue
-		}
+		for i := 0; i < elemType.NumField(); i++ {
 
-		tag := ft.Tag.Get(sftKey)
-		tagFields := strings.Split(tag, ",")
-		for _, flag := range tagFields {
+			ft := elemType.Field(i)
+			fv := elemValue.Field(i)
 
-			kv := strings.Split(flag, "=")
-
-			if kv[0] == sftEnv {
-				if len(kv) == 2 {
-					if value := os.Getenv(kv[1]); len(value) > 0 {
-						debugPrintf("Loading configuration for struct `%v`'s field `%v` from env %v...\n", configType.Name(), ft.Name, kv[1])
-						if err := yaml.Unmarshal([]byte(value), fv.Addr().Interface()); err != nil {
-							return err
-						}
-					}
-				}
+			if !fv.CanAddr() || !fv.CanInterface() {
+				verbosePrintf("%sCan't addr or interface FIELD: CanAddr: %v, CanInterface: %v. -> %s = '%+v'\n",
+					indent, fv.CanAddr(), fv.CanInterface(), ft.Name, fv.Interface())
+				continue
 			}
 
-			if empty := reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()); empty {
-				if kv[0] == sftDefault {
+			tag := ft.Tag.Get(sftKey)
+			tagFields := strings.Split(tag, ",")
+			verbosePrintf("\n%sProcessing FIELD: %s %s = %+v, tags: %s\n", indent, ft.Name, ft.Type.String(), fv.Interface(), tag)
+			for _, flag := range tagFields {
+
+				kv := strings.Split(flag, "=")
+
+				if kv[0] == sftEnv {
 					if len(kv) == 2 {
-						if err := yaml.Unmarshal([]byte(kv[1]), fv.Addr().Interface()); err != nil {
-							return err
+						if value := os.Getenv(kv[1]); len(value) > 0 {
+							debugPrintf("Loading configuration for struct `%v`'s field `%v` from env %v...\n", elemType.Name(), ft.Name, kv[1])
+							if err := yaml.Unmarshal([]byte(value), fv.Addr().Interface()); err != nil {
+								return err
+							}
 						}
-						continue
 					}
-				} else if kv[0] == sftRequired {
-					return errors.New(ft.Name + " is required")
+				}
+
+				if empty := reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()); empty {
+					if kv[0] == sftDefault {
+						if len(kv) == 2 {
+							if err := yaml.Unmarshal([]byte(kv[1]), fv.Addr().Interface()); err != nil {
+								return err
+							}
+						}
+					} else if kv[0] == sftRequired {
+						return errors.New(ft.Name + " is required")
+					}
 				}
 			}
-		}
 
-		// recursive check
-		{
-			for fv.Kind() == reflect.Ptr {
-				fv = fv.Elem()
-			}
-
-			if fv.Kind() == reflect.Struct {
-				if err := parseConfigTags(fv.Addr().Interface()); err != nil {
+			switch fv.Kind() {
+			case reflect.Ptr, reflect.Struct, reflect.Slice, reflect.Map:
+				if err := parseConfigTags(fv.Addr().Interface(), "	"); err != nil {
 					return err
 				}
 			}
 
-			if fv.Kind() == reflect.Slice {
-				for i := 0; i < fv.Len(); i++ {
-					if reflect.Indirect(fv.Index(i)).Kind() == reflect.Struct {
-						if err := parseConfigTags(fv.Index(i).Addr().Interface()); err != nil {
-							return err
-						}
-					}
-				}
-			}
+			verbosePrintf("%sProcessed  FIELD: %s %s = %+v\n", indent, ft.Name, ft.Type.String(), fv.Interface())
+		}
 
-			if fv.Kind() == reflect.Map {
-				for _, key := range fv.MapKeys() {
-					if reflect.Indirect(fv.MapIndex(key)).Kind() == reflect.Struct {
-						if err := parseConfigTags(fv.MapIndex(key).Interface()); err != nil {
-							return err
-						}
-					}
-				}
+	case reflect.Slice:
+		for i := 0; i < elemValue.Len(); i++ {
+			if err := parseConfigTags(elemValue.Index(i).Addr().Interface(), "	"); err != nil {
+				return err
+			}
+		}
+
+	case reflect.Map:
+		for _, key := range elemValue.MapKeys() {
+			if err := parseConfigTags(elemValue.MapIndex(key).Interface(), "	"); err != nil {
+				return err
 			}
 		}
 	}
+
 	return nil
 }
 
 // EXPORTED ------------------------------------------------------------------------------------------------------------
 
-// Unmarshal will unmarshal []bytes to interface
+// Unmarshal will unmarshal []byte to interface
 // for yaml, toml and json data formats.
-// Useful in the 'configurable' interface in which
-// the received bytes are the result of multiple
-// merged config files.
+//
 // Will also parse struct flags.
 func Unmarshal(in []byte, out interface{}) (err error) {
-	if err = unmarshal("", in, out); err == nil {
-		err = parseConfigTags(out)
+	if err = unmarshalJSON(in, out, ""); err == nil {
+		return parseConfigTags(out, "")
 	}
-	return
+
+	if err = unmarshalYAML(in, out, ""); err == nil {
+		return parseConfigTags(out, "")
+	}
+
+	if err = unmarshalTOML(in, out, ""); err == nil {
+		return parseConfigTags(out, "")
+	}
+
+	return fmt.Errorf("the provided data is incompatible with an interface of type %T:\n%s",
+		out, strings.TrimSuffix(string(in), "\n"))
 }
 
-// LoadConfig will unmarshal the provided config file
-// eventually overriding it with an environment specific one,
-// if present, to the provided struct pointer.
+// LoadConfig will unmarshal all the matched
+// config files to the config interface.
+//
+// Build-environment specific files will override generic files.
+// The latest files will override the earliest.
+//
 // Will also parse struct flags.
 func LoadConfig(config interface{}, files ...string) (err error) {
-	var in []byte
-	if in, err = mergedConfigs(files); err != nil {
-		return
-	}
-
-	if err = unmarshal("", in, config); err == nil {
-		err = parseConfigTags(config)
-	}
-
-	defer fmt.Print("\n")
-	defer debugPrintf("%s%s\n", "Loaded config: ", green(dump(config)))
-
-	return
-}
-
-// LoadConfigMap returns a map of all the matched config files merged in the right order.
-// Build-environment specific files will override universal ones.
-// The latest files will override the earliest, from right to left.
-//
-// Keep in mind that:
-// 1. yaml files uses lowercased keys by default, unless you define a custom field tag.
-// 2. embedded structs would be decoded as map[interface{}]interface{} in yaml,
-// not map[string]interface{} as in json or toml.
-func LoadConfigMap(files ...string) (layeredMap map[string]interface{}, err error) {
 	foundFiles := configFilesByEnv(files...)
 	if len(foundFiles) == 0 {
-		return layeredMap, fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
+		return fmt.Errorf("no config file found for '%s'", strings.Join(files, " | "))
 	}
 
 	for _, file := range foundFiles {
-		if err = unmarshal(file, nil, &layeredMap); err != nil {
-			return
+		var in []byte
+		if in, err = ioutil.ReadFile(file); err != nil {
+			return err
+		}
+
+		ext := filepath.Ext(file)
+
+		switch {
+		case regexp.MustCompile(regexYAML).MatchString(ext):
+			err = unmarshalYAML(in, config, file)
+		case regexp.MustCompile(regexTOML).MatchString(ext):
+			err = unmarshalTOML(in, config, file)
+		case regexp.MustCompile(regexJSON).MatchString(ext):
+			err = unmarshalJSON(in, config, file)
+		default:
+			err = fmt.Errorf("unknown data format, can't unmarshal file: '%s'", file)
+		}
+
+		if err != nil {
+			return err
 		}
 	}
-	debugPrintf(green(" = ")+"%+v\n", green(dump(layeredMap)))
-	return
+
+	defer debugPrintf("\n%s\n", green(dump(config)))
+	return parseConfigTags(config, "")
 }

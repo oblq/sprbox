@@ -15,12 +15,8 @@ type Tool struct {
 }
 
 // SpareConfig is the 'configurable' interface implementation.
-func (t *Tool) SpareConfig(configData []byte) (err error) {
-	// since the config file format is known here
-	// you can use yaml, toml or json unmarshaler directly.
-	// sprbox.Unmarshal() will recognize any of those formats
-	// and will process sprbox flags.
-	err = sprbox.Unmarshal(configData, t)
+func (t *Tool) SpareConfig(configFiles []string) (err error) {
+	err = sprbox.LoadConfig(t, configFiles...)
 	return
 }
 

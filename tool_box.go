@@ -1,12 +1,15 @@
 package sprbox
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 )
 
 // Struct field flags.
@@ -16,19 +19,24 @@ const (
 
 // Errors.
 var (
-	errInvalidPointer     = errors.New("<box> parameter should be a struct pointer")
-	errOmit               = errors.New("omitted")
-	errNoConfigurable     = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]byte) error`)
-	errConfigFileNotFound = errors.New("config file not found")
+	errInvalidPointer             = errors.New("<box> parameter should be a struct pointer")
+	errOmit                       = errors.New("omitted")
+	errNoConfigurable             = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]string) error`)
+	errNoConfigurableInCollection = errors.New(`does not implement the 'configurableInCollection' interface: func SpareConfigBytes([]byte) error`)
+	errConfigFileNotFound         = errors.New("config file not found")
 )
 
 type configurable interface {
-	SpareConfig([]byte) error
+	SpareConfig([]string) error
+}
+
+type configurableInCollection interface {
+	SpareConfigBytes([]byte) error
 }
 
 // LoadToolBox initialize and (eventually) configure the provided struct pointer
 // looking for the config files in the provided configPath.
-func LoadToolBox(toolBox interface{}, configPath string) error {
+func LoadToolBox(toolBox interface{}, configPath string) (err error) {
 	t := reflect.TypeOf(toolBox).Elem()
 	v := reflect.ValueOf(toolBox).Elem()
 
@@ -38,49 +46,165 @@ func LoadToolBox(toolBox interface{}, configPath string) error {
 		return errInvalidPointer // nil pointer
 	}
 
-	//debugPrintf("ORIGINAL BOX: %#v\n", toolBox)
-	//printLoadHeader()
-	var err error
 	for i := 0; i < v.NumField(); i++ {
-		ft := t.Field(i)
+		sf := t.Field(i)
 		fv := v.Field(i)
-		if err = loadField(configPath, &ft, ft.Type, fv); err != nil {
+		if err = loadField(configPath, &sf, fv, ""); err != nil {
 			break
 		}
 	}
-	debugPrintf("\nLoaded toolbox: %s\n", green(dump(toolBox)))
+	debugPrintf("\nLoaded toolbox: \n%s\n", green(dump(toolBox)))
 	fmt.Print("\n")
-	return err
+	return
 }
 
-func loadField(configPath string, f *reflect.StructField, t reflect.Type, v reflect.Value) error {
-	switch t.Kind() {
+func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, indent string) error {
+	switch fv.Kind() {
 	case reflect.Ptr:
-		if v.IsNil() {
-			newV := reflect.New(t.Elem())
-			v.Set(newV)
-		}
-
-		configFiles := []string{f.Name}
-		if omit := parseTags(&configFiles, f); omit {
-			break
-		}
-
-		if err := configure(configPath, configFiles, f, t, &v); err != nil {
-			return err
-		}
+		fv.Set(reflect.New(fv.Type().Elem()))
+		return loadField(configPath, sf, fv.Elem(), "")
 
 	case reflect.Struct:
-		configFiles := []string{f.Name}
-		if omit := parseTags(&configFiles, f); omit {
+		configFiles := []string{sf.Name}
+		if omit := parseTags(&configFiles, sf); omit {
 			break
 		}
 
-		newV := reflect.New(t)
-		if err := configure(configPath, configFiles, f, t, &newV); err != nil {
-			return err
+		newV := reflect.New(fv.Type())
+
+		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+				return err
+			}
+
+			fv.Set(newV.Elem())
+		} else {
+			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
+			fv.Set(newV.Elem())
+			// recursive
+			for i := 0; i < fv.NumField(); i++ {
+				ssf := fv.Type().Field(i)
+				sfv := fv.Field(i)
+				if err := loadField(configPath, &ssf, sfv, "  "); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
-		v.Set(newV.Elem())
+
+	case reflect.Slice:
+		configFiles := []string{sf.Name}
+		if omit := parseTags(&configFiles, sf); omit {
+			break
+		}
+
+		newV := reflect.New(fv.Type())
+
+		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+				return err
+			}
+			fv.Set(newV.Elem())
+		} else {
+			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
+
+			for i, file := range configFiles {
+				configFiles[i] = filepath.Join(configPath, file)
+			}
+
+			var config []interface{}
+			if err := LoadConfig(&config, configFiles...); err != nil {
+				printLoadResult("  "+sf.Name, sf.Type.Elem(), err)
+				return err
+			}
+
+			newV := reflect.New(fv.Type()).Elem()
+
+			for i := 0; i < len(config); i++ {
+				elemType := fv.Type().Elem()
+				var elem reflect.Value
+				sfName := fmt.Sprintf("%s[%d]", sf.Name, i)
+
+				switch elemType.Kind() {
+				case reflect.Ptr:
+					elem = reflect.New(elemType.Elem())
+					if err := configureElem(elem, config[i], sfName); err != nil {
+						return err
+					}
+					printLoadResult("  "+sfName, elem.Type(), nil)
+					newV.Set(reflect.Append(newV, elem))
+
+				case reflect.Struct:
+					elem = reflect.New(elemType)
+					if err := configureElem(elem, config[i], sfName); err != nil {
+						return err
+					}
+					printLoadResult("  "+sfName, elem.Elem().Type(), nil)
+					newV.Set(reflect.Append(newV, elem.Elem()))
+				}
+			}
+
+			fv.Set(newV)
+			return nil
+		}
+
+	case reflect.Map:
+		configFiles := []string{sf.Name}
+		if omit := parseTags(&configFiles, sf); omit {
+			break
+		}
+
+		newV := reflect.New(fv.Type())
+
+		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+				return err
+			}
+			fv.Set(newV.Elem())
+		} else {
+			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
+
+			for i, file := range configFiles {
+				configFiles[i] = filepath.Join(configPath, file)
+			}
+
+			var config map[string]interface{}
+			if err := LoadConfig(&config, configFiles...); err != nil {
+				printLoadResult("  "+sf.Name, fv.Type(), err)
+				return err
+			}
+
+			newV := reflect.MakeMapWithSize(fv.Type(), len(config))
+
+			for key, conf := range config {
+				kv := reflect.ValueOf(key)
+
+				elemType := fv.Type().Elem()
+				var elem reflect.Value
+				sfName := fmt.Sprintf("%s[%s]", sf.Name, key)
+
+				switch elemType.Kind() {
+				case reflect.Ptr:
+					elem = reflect.New(elemType.Elem())
+					if err := configureElem(elem, conf, sfName); err != nil {
+						return err
+					}
+					printLoadResult("  "+sfName, elem.Type(), nil)
+					newV.SetMapIndex(kv, elem)
+
+				case reflect.Struct:
+					elem = reflect.New(elemType)
+					if err := configureElem(elem, conf, sfName); err != nil {
+						return err
+					}
+					printLoadResult("  "+sfName, elem.Elem().Type(), nil)
+					newV.SetMapIndex(kv, elem.Elem())
+				}
+			}
+
+			fv.Set(newV)
+			return nil
+		}
 
 	default:
 		break
@@ -101,7 +225,7 @@ func parseTags(configFiles *[]string, f *reflect.StructField) (omit bool) {
 	}
 
 	if regexp.MustCompile(sftOmit).MatchString(tag) {
-		printLoadResult(f, f.Type, errOmit)
+		//printLoadResult(f.Name, f.Type, errOmit)
 		return true
 	}
 
@@ -116,45 +240,56 @@ func parseTags(configFiles *[]string, f *reflect.StructField) (omit bool) {
 	return
 }
 
-// configure will call the 'configurable' interface
-// on the passed field struct.
-func configure(configPath string, configFiles []string, f *reflect.StructField, t reflect.Type, v *reflect.Value) error {
-	if _, isConfigurable := v.Interface().(configurable); !isConfigurable {
-		printLoadResult(f, t, errNoConfigurable)
-		return nil
-	}
-
-	// add configPath to any file name
+// configure will call the 'configurable' interface on the passed field struct pointer.
+func configure(configPath string, configFiles []string, f *reflect.StructField, v *reflect.Value, indent string) error {
 	for i, file := range configFiles {
 		configFiles[i] = filepath.Join(configPath, file)
 	}
 
-	bytes, err := mergedConfigs(configFiles)
-	if err != nil {
-		printLoadResult(f, t, err)
-		return nil
-	}
-
-	if err := v.Interface().(configurable).SpareConfig(bytes); err != nil {
-		printLoadResult(f, t, err)
+	if err := v.Interface().(configurable).SpareConfig(configFiles); err != nil {
+		printLoadResult(indent+f.Name, f.Type, err)
 		return err
 	}
 
-	printLoadResult(f, t, nil)
+	printLoadResult(indent+f.Name, f.Type, nil)
 	return nil
 }
 
-func printLoadResult(f *reflect.StructField, t reflect.Type, err error) {
-	objNameType := t.Name()
-	if f != nil {
-		objNameType = f.Name
+// configureElem will call the 'configurableInCollection' interface on the passed struct pointer.
+func configureElem(elem reflect.Value, config interface{}, sfName string) (err error) {
+	if _, isConfigurable := elem.Interface().(configurableInCollection); !isConfigurable {
+		printLoadResult(sfName, elem.Type(), errNoConfigurableInCollection)
+		return nil
+	}
+
+	var bytes []byte
+	if bytes, err = json.Marshal(config); err != nil {
+		if bytes, err = yaml.Marshal(config); err != nil {
+			printLoadResult(sfName, elem.Type(), err)
+			return err
+		}
+	}
+
+	if err = elem.Interface().(configurableInCollection).SpareConfigBytes(bytes); err != nil {
+		printLoadResult(sfName, elem.Type(), err)
+		return err
+	}
+
+	return nil
+}
+
+func printLoadResult(objNameType string, t reflect.Type, err error) {
+	if len(objNameType) == 0 {
+		objNameType = t.Name()
 	}
 	objNameType = fmt.Sprintf("%v (%v)", blue(objNameType), t.String())
 	objNameType = fmt.Sprintf("%-50v", objNameType)
 	if err != nil {
 		if err == errOmit {
 			fmt.Printf("%s %s\n", objNameType, err.Error())
-		} else if err == errNoConfigurable || err == errConfigFileNotFound {
+		} else if err == errNoConfigurable ||
+			err == errNoConfigurableInCollection ||
+			err == errConfigFileNotFound {
 			fmt.Printf("%s %s\n", objNameType, yellow("-> "+err.Error()))
 		} else {
 			fmt.Printf("%s %s\n", objNameType, red("-> "+err.Error()))

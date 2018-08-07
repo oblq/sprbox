@@ -55,6 +55,7 @@ func init() {
 	Local.compileExps()
 }
 
+var testingRegexp = regexp.MustCompile(`_test|(\.test$)|_Test`)
 var inferredBy string
 
 func loadTag() {
@@ -71,6 +72,10 @@ func loadTag() {
 			inferredBy = fmt.Sprintf("<empty>, inferred from git.BranchName (%s).", VCS.BranchName)
 			return
 		}
+	} else if testingRegexp.MatchString(os.Args[0]) {
+		privateTAG = Testing.String()
+		inferredBy = fmt.Sprintf("'%s', inferred from the running file name (%s).", privateTAG, os.Args[0])
+		return
 	}
 
 	inferredBy = "<empty>, default environment is 'local'."

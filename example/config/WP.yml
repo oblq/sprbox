@@ -1,0 +1,2 @@
+QueueSize: 0 # 0 = default value (10000)
+Workers: 16 # 0 = default value (runtime.NumCPU())

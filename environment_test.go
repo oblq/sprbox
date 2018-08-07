@@ -6,6 +6,7 @@ import (
 )
 
 func TestEnvironment(t *testing.T) {
+
 	BUILDENV = Local.String()
 	if Env() != Local {
 		t.Error("Local environment not matched")
@@ -44,6 +45,18 @@ func TestEnvironment(t *testing.T) {
 
 	println(Env().Info())
 	println(EnvSubDir(configPath))
+
+	BUILDENV = ""
+	os.Unsetenv(EnvVarKey)
+
+	VCS = NewRepository("./")
+	println(Env().Info())
+
+	VCS = nil
+	if Env() != Testing {
+		Env().PrintInfo()
+		t.Error("Development is not testing by default during testing: " + Env().String() + " - " + os.Args[0])
+	}
 
 	// RegEx test
 	Production.AppendExp("branch/*")
