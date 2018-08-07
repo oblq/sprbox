@@ -1,0 +1,45 @@
+# Config EXAMPLE
+
+Services:
+
+  api:
+    Name: api
+    Version: 1
+    ProxyService:
+    # IP format: <publicIP>: <privateIP>.
+    # privateIP here is referring to the private network IP, if applicable, otherwise use <publicIP>: <publicIP>.
+    IPs:
+      tasks.api: tasks.api # Docker Swarm
+      api: api # Docker
+      127.0.0.1: 127.0.0.1 # local development
+    Hosts:
+      - localhost
+      - 127.0.0.1
+      - lvh.me
+      - api.lvh.me
+    Port: 1234
+    Basepath: {{.Name}}/v{{.Version}}
+
+  frontend:
+    Name: frontend
+    Version: 1.0.39
+    ProxyService:
+    IPs:
+      frontend: frontend
+    Hosts:
+      - example.com
+      - www.example.com
+      - example.co
+    Port: 80
+    Basepath:
+
+  storage:
+    Name: storage
+    Version: 2.3.1
+    ProxyService:
+    IPs:
+      192.168.1.10: 127.0.0.1
+    Hosts:
+      - storage.example.com
+    Port: 80
+    Basepath:

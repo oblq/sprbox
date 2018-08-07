@@ -7,27 +7,22 @@ import (
 
 	"sync"
 
-	"github.com/oblq/sprbox"
+	"strings"
+
 	"github.com/oblq/sprbox/example/app"
-	"github.com/oblq/workerful"
 )
 
 var wg = sync.WaitGroup{}
 
 func main() {
-	// manually loading configuration on an omitted tool: --------------------------------------------------------------
+	// Services --------------------------------------------------------------------------------------------------------
 
-	var cfg workerful.Config
-	if err := sprbox.LoadConfig(&cfg, "./config/WPool"); err != nil {
-		println(err.Error())
-	}
-	app.Shared.WPoolOmitted.Workerful = *workerful.New("", &cfg)
-	app.Shared.WPoolOmitted.PushFunc(func() error {
-		fmt.Println("printed from a job in worker-pool...")
-		return nil
-	})
+	fmt.Printf("This is the primary api URL: %s\n", app.Shared.Services["api"].URL())
+	_, alternatives := app.Shared.Services["api"].URLAlternatives()
+	fmt.Printf("Those are some alternative api URLs:\n%s\n", strings.Join(alternatives, "\n"))
+	fmt.Printf("Those are some custom values stored on api:\n%+v\n\n", app.Shared.Services["api"].Data)
 
-	// using tools: ----------------------------------------------------------------------------------------------------
+	// Worker-pool -----------------------------------------------------------------------------------------------------
 
 	// calling some funcs on the app.Shared singleton,
 	// automatically initialized with the right config.
@@ -36,7 +31,7 @@ func main() {
 
 	i := 0
 	for i < jobsNum {
-		app.Shared.WPool.PushJobAsync(CustomJob{i})
+		app.Shared.WP.PushJobAsync(CustomJob{i})
 		i++
 	}
 

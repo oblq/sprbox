@@ -18,13 +18,16 @@ type Workerful struct {
 	workerful.Workerful
 }
 
-func (wp *Workerful) SpareConfig(configData []byte) (err error) {
-	// since the config file format is known here
-	// you can use yaml, toml or json unmarshaler directly.
-	// sprbox.Unmarshal() will recognize any of those formats
-	// and will process sprbox flags eventually.
+func (wp *Workerful) SpareConfig(configFiles []string) (err error) {
 	var cfg workerful.Config
-	err = sprbox.Unmarshal(configData, &cfg)
+	err = sprbox.LoadConfig(&cfg, configFiles...)
+	wp.Workerful = *workerful.New("", &cfg)
+	return
+}
+
+func (wp *Workerful) SpareConfigBytes(configBytes []byte) (err error) {
+	var cfg workerful.Config
+	err = sprbox.Unmarshal(configBytes, &cfg)
 	wp.Workerful = *workerful.New("", &cfg)
 	return
 }

@@ -3,14 +3,14 @@
 package workerful
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"runtime"
 	"sync"
 	"sync/atomic"
 
-	"gopkg.in/yaml.v2"
+	"fmt"
+
+	"github.com/oblq/sprbox"
 )
 
 // Job is a job interface, useful if you need to pass parameters or do more complicated stuff.
@@ -26,13 +26,13 @@ type jobQueue chan interface{}
 
 // Config defines the config for workerful.
 type Config struct {
-	QueueSize int `yaml:"queue_size"`
-	Workers   int `yaml:"workers"`
+	QueueSize int `yaml:"QueueSize"`
+	Workers   int `yaml:"Workers"`
 }
 
 // Workerful is the workerful instance type.
 type Workerful struct {
-	Config Config
+	Config *Config
 
 	doneCount   uint64
 	failedCount uint64
@@ -44,7 +44,7 @@ type Workerful struct {
 	// Necessary to avoid deadlocks by sending jobs in the jobQueue when it has been already closed.
 	stopGroup *sync.WaitGroup
 	// If true no more jobs can be pushed in the jobQueue.
-	queueClosed bool
+	blockPush bool
 }
 
 // New creates and returns a new workerful instance, and starts the workers to process the queue.
@@ -65,70 +65,46 @@ type Workerful struct {
 // Also accept no configPath nor config, the default values will be loaded.
 func New(configPath string, config *Config) *Workerful {
 	if len(configPath) > 0 {
-		if compsConfigFile, err := ioutil.ReadFile(configPath); err != nil {
-			log.Fatalln("Wrong config path", err)
-		} else if err = yaml.Unmarshal(compsConfigFile, &config); err != nil {
-			log.Fatalln("Can't unmarshal config file", err)
+		if config == nil {
+			config = &Config{}
+		}
+		if err := sprbox.LoadConfig(config, configPath); err != nil {
+			fmt.Printf("unable to load config: %v", err)
 		}
 	} else if config == nil {
 		config = &Config{0, 0}
 	}
 
 	wp := &Workerful{}
-	wp.setConfigAndStart(*config)
+	wp.setConfigAndStart(config)
 	return wp
 }
 
-// Go2Box is the https://github.com/oblq/sprbox interface implementation.
-func (wp *Workerful) Go2Box(configPath string) error {
+// SpareConfig is the https://github.com/oblq/sprbox 'configurable' interface implementation.
+func (wp *Workerful) SpareConfig(configFiles []string) (err error) {
 	var config *Config
-	if len(configPath) > 0 {
-		if compsConfigFile, err := ioutil.ReadFile(configPath); err != nil {
-			return fmt.Errorf("wrong config path: %s", err.Error())
-		} else if err = yaml.Unmarshal(compsConfigFile, &config); err != nil {
-			return fmt.Errorf("can't unmarshal config file: %s", err.Error())
-		}
-	} else {
-		config = &Config{0, 0}
-	}
-	wp.setConfigAndStart(*config)
-	return nil
+	err = sprbox.LoadConfig(&config, configFiles...)
+	wp.setConfigAndStart(config)
+	return
 }
 
-func (wp *Workerful) setConfigAndStart(config Config) {
-	wp.Stop()
+// SpareConfigBytes is the https://github.com/oblq/sprbox 'configurableInCollection' interface implementation.
+func (wp *Workerful) SpareConfigBytes(configBytes []byte) (err error) {
+	var config *Config
+	err = sprbox.Unmarshal(configBytes, &config)
+	wp.setConfigAndStart(config)
+	return
+}
 
+func (wp *Workerful) setConfigAndStart(config *Config) {
 	if config.Workers == 0 {
 		config.Workers = runtime.NumCPU()
 		runtime.GOMAXPROCS(config.Workers)
 	}
 
 	wp.Config = config
-	wp.Start()
-}
 
-// Stop close the jobQueue, gracefully, it is blocking.
-// It is possible to Stop and Restart Workerful at any time.
-// Already queued jobs will be processed.
-// Jobs pushed asynchronously will be added to the queue and processed.
-// It will block until all of the jobs are added to the queue and processed.
-func (wp *Workerful) Stop() {
-	// stopGroup will wait until all jobs are sent to the queue
-	// sending a job after the channel has been closed will cause a crash otherwise
-	if wp.stopGroup != nil && wp.jobQueue != nil {
-		wp.stopGroup.Wait()
-	}
-
-	wp.queueClosed = true
-
-	if wp.jobQueue != nil {
-		close(wp.jobQueue)
-	}
-}
-
-// Start will launch the workers to process jobs.
-// It is possible to Stop and Restart Workerful at any time.
-func (wp *Workerful) Start() {
+	// Start
 	wp.jobQueue = make(jobQueue, wp.Config.QueueSize)
 
 	// Create workers
@@ -139,7 +115,7 @@ func (wp *Workerful) Start() {
 	}
 
 	wp.stopGroup = &sync.WaitGroup{}
-	wp.queueClosed = false
+	wp.blockPush = false
 
 	//println("[workerful] restarted...")
 
@@ -150,6 +126,23 @@ func (wp *Workerful) Start() {
 		wp.workersGroup.Wait()
 		//println("[workerful] gracefully stopped...")
 	}()
+}
+
+// Stop close the jobQueue, gracefully, it is blocking.
+// It is possible to Stop and Restart Workerful at any time.
+// Already queued jobs will be processed.
+// Jobs pushed asynchronously will be added to the queue and processed.
+// It will block until all of the jobs are added to the queue and processed.
+func (wp *Workerful) Stop() {
+	// Disable pushing...
+	wp.blockPush = true
+
+	// stopGroup will wait until all jobs are sent to the queue
+	// sending a job after the channel has been closed will cause a crash otherwise
+	if wp.stopGroup != nil && wp.jobQueue != nil {
+		wp.stopGroup.Wait()
+		close(wp.jobQueue)
+	}
 }
 
 // newWorker creates a new worker
@@ -189,7 +182,7 @@ func (wp *Workerful) Status() (done uint64, failed uint64, inQueue int) {
 
 // check if jobQueue is closed
 func (wp *Workerful) canPush() bool {
-	if wp.queueClosed {
+	if wp.blockPush {
 		atomic.AddUint64(&wp.failedCount, 1)
 		println("[workerful] the queue is closed, can't push a new job")
 		return false

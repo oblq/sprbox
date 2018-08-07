@@ -1,25 +1,22 @@
 # Workerful
 
+[![GitHub tag](https://img.shields.io/github/tag/oblq/workerful.svg)](https://github.com/oblq/workerful)
 [![Build Status](https://travis-ci.org/oblq/workerful.svg?branch=master)](https://travis-ci.org/oblq/workerful)
 [![codecov](https://codecov.io/gh/oblq/workerful/branch/master/graph/badge.svg)](https://codecov.io/gh/oblq/workerful)
 [![Go Report Card](https://goreportcard.com/badge/github.com/oblq/workerful)](https://goreportcard.com/report/github.com/oblq/workerful)
-![dependencies Status](https://img.shields.io/badge/dependencies-none-brightgreen.svg)
 [![GoDoc](https://godoc.org/github.com/oblq/workerful?status.svg)](https://godoc.org/github.com/oblq/workerful)
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+[![sprbox](https://img.shields.io/badge/sprbox-ready-green.svg)](https://github.com/oblq/sprbox)  
 
-**Workerful** is a simple yet powerful worker pool.
+**Workerful** is a minimal yet powerful worker-pool implementation with some helper funcs for a simple usage.
 
-Compatible with [sprbox](https://github.com/oblq/sprbox).
-
-## Getting Started
-
-#### Install
+## Install
 
 ```sh
 $ go get github.com/oblq/workerful
 ```
 
-#### Init
+## Quickstart
 
 It is possible to pass the config as a yaml file path, the workerful.Config struct or none of the above (the default values will be loaded).\
 The config struct takes two parameters:
@@ -29,76 +26,71 @@ The config struct takes two parameters:
 | queue_size    | Determine the size of the queue. Use 0 to have an unbuffered jobQueue channel. | `0` (unbuffered)
 | workers | The number of parallel jobs to be executed. Using `0` will load the default value. | `runtime.NumCPU()`
 
-Get a new instance (with unbuffered jobQueue):
-```
-    wp := workerful.New("", &workerful.Config{QueueSize: 0, Workers: 0})
+Get a new instance (with unbuffered jobQueue):  
+```go
+wp := workerful.New("", &workerful.Config{QueueSize: 0, Workers: 0})
 ```
 
-#### Push a job
+## Push a job
 
 You can push a simple `func() error` or a more complex custom Job (see `workerful.Job` interface).
 
-Push a simple func():
-```
-    wp.PushFunc(func() error { 
-    	println("func executed...")
-    	return nil
-    })
+Push a simple func:
+```go
+wp.PushFunc(func() error { 
+    println("func executed...")
+    return nil
+})
 
-    // Non blocking.
-    wp.PushFuncAsync(func() error { 
-    	println("func executed...")
-        return nil
-    })
+// Non blocking.
+wp.PushFuncAsync(func() error { 
+    println("func executed...")
+    return nil
+})
 ```
 
 Push a custom job if you need to pass parameters or for more complicated stuff:
-```
-    // CustomJob implement the workerful.Job interface (F())
-    type CustomJob struct {
-        Responses chan int
-        ID        int
-    }
+```go
+// CustomJob implement the workerful.Job interface (F())
+type CustomJob struct {
+    WG  *sync.WaitGroup
+    ID  int
+}
+
+func (cj CustomJob) F() error {
+    time.Sleep(time.Second)
+    println("job", cj.ID, "executed...")
+    cj.WG.Done()
+    return nil
+}
     
-    func (cj CustomJob) F() error {
-        time.Sleep(time.Second)
-        println("job", cj.ID, "executed...")
-        cj.Responses <- 1
-        return nil
-    }
-        
-    // Default values.	
-    wp := workerful.New("", nil)
-    responses := make(chan int)
+wp := workerful.New("", nil)
 
-    wp.PushJob(CustomJob{responses, 1})
-        
-    // Non blocking.
-    wp.PushJobAsync(CustomJob{responses, 2})
+waitGroup := sync.WaitGroup{}
+waitGroup.Add(2)
+
+wp.PushJob(CustomJob{&waitGroup, 1})
     
-    count := 0
-    for i := range responses {
-        count += i
-        if count == 2 {
-            close(responses)
-        }
-    }
+// Non blocking.
+wp.PushJobAsync(CustomJob{&waitGroup, 2})
 
-    wp.Stop()
+waitGroup.Wait()
+
+println("finished")
+wp.Stop()
 ```
 
-#### Get status
+## Get status
 
-```
-    doneJobs, failedJobs, inQueueJobs := wp.Status()
+```go
+doneJobs, failedJobs, inQueueJobs := wp.Status()
 ```
 
-#### Graceful shutdown (and restart)
+## Graceful shutdown
 
-```
-    wp := workerful.New("./workerful.yml", nil)
-    wp.Stop()
-    wp.Start()
+```go
+wp := workerful.New("./workerful.yml", nil)
+wp.Stop()
 ```
 
 ## Author

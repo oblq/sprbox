@@ -251,7 +251,9 @@ func TestSFTDefault(t *testing.T) {
 	SetDebug(true)
 
 	var result Config
-	LoadConfig(&result, filepath.Join(configPath, fileName))
+	if err := LoadConfig(&result, filepath.Join(configPath, fileName)); err != nil {
+		t.Error(err)
+	}
 	if !reflect.DeepEqual(result, defaultConfig()) {
 		t.Errorf("\n\nFile:\n%#v\n\nConfig:\n%#v\n\n", defaultConfig(), result)
 	}
@@ -374,7 +376,7 @@ func TestEnvironmentFiles(t *testing.T) {
 	}
 
 	// case insensitive '<path>/<file>.<environment>.*'
-	FileSearchCaseSensitive = false
+	fileSearchCaseSensitive = false
 	if files := configFilesByEnv(filepath.Join(configPath, "TOOL")); len(files) == 1 {
 		if files[0] != filepath.Join(configPath, "tool."+Env().String()+".json") {
 			t.Error("file not matched")
@@ -393,12 +395,12 @@ func TestMapYAML(t *testing.T) {
 
 	SetDebug(true)
 
-	configMap, err := LoadConfigMap(
+	var configMap map[interface{}]interface{}
+	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.yaml"),
 		filepath.Join(configPath, "config2.yaml"),
 		filepath.Join(configPath, "config3.yaml"),
-	)
-	if err != nil {
+	); err != nil {
 		t.Error(err)
 	}
 
@@ -426,12 +428,12 @@ func TestMapJSON(t *testing.T) {
 
 	SetDebug(true)
 
-	configMap, err := LoadConfigMap(
+	var configMap map[string]interface{}
+	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.json"),
 		filepath.Join(configPath, "config2.json"),
 		filepath.Join(configPath, "config3.json"),
-	)
-	if err != nil {
+	); err != nil {
 		t.Error(err)
 	}
 
@@ -457,12 +459,12 @@ func TestMapTOML(t *testing.T) {
 
 	SetDebug(true)
 
-	configMap, err := LoadConfigMap(
+	var configMap map[string]interface{}
+	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.toml"),
 		filepath.Join(configPath, "config2.toml"),
 		filepath.Join(configPath, "config3.toml"),
-	)
-	if err != nil {
+	); err != nil {
 		t.Error(err)
 	}
 
@@ -487,14 +489,15 @@ func TestMapMixed(t *testing.T) {
 	createJSON(config, "config3.json", t)
 	defer removeConfigFiles(t)
 
+	verbose = true
 	SetDebug(true)
 
-	configMap, err := LoadConfigMap(
+	var configMap map[string]interface{}
+	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.yml"),
 		filepath.Join(configPath, "config2.toml"),
 		filepath.Join(configPath, "config3.json"),
-	)
-	if err != nil {
+	); err != nil {
 		t.Error(err)
 	}
 
@@ -516,14 +519,63 @@ func TestMapMixed(t *testing.T) {
 		t.Error("value not overriden")
 	}
 
+	var configStruct Config
+	if err := LoadConfig(&configStruct,
+		filepath.Join(configPath, "config1.yml"),
+		filepath.Join(configPath, "config2.toml"),
+		filepath.Join(configPath, "config3.json"),
+	); err != nil {
+		t.Error(err)
+	}
+
+	if configStruct.String != "overriden1" {
+		t.Error("value not overriden")
+	}
+
+	if configStruct.PG.DB != "overriden2" {
+		t.Error("value not overriden")
+	}
+
+	verbose = false
 	SetDebug(false)
 }
 
 func TestMapNoFiles(t *testing.T) {
-	_, err := LoadConfigMap(filepath.Join(configPath, "config.yml"))
-	if err != nil {
+	var configMap map[interface{}]interface{}
+	if err := LoadConfig(configMap, filepath.Join(configPath, "config.yml")); err != nil {
 		t.Log(err)
 	} else {
 		t.Error("unexistent file does not return error")
+	}
+}
+
+func TestUnmarshal(t *testing.T) {
+	defaultConfig := defaultConfig()
+
+	var configUnmarshal Config
+
+	var tomlMarsh bytes.Buffer
+	if err := toml.NewEncoder(&tomlMarsh).Encode(defaultConfig); err != nil {
+		t.Log(err)
+	}
+	if err := Unmarshal(tomlMarsh.Bytes(), &configUnmarshal); err != nil {
+		t.Log(err)
+	}
+
+	if bytes, err := json.Marshal(defaultConfig); err != nil {
+		t.Log(err)
+	} else if err := Unmarshal(bytes, &configUnmarshal); err != nil {
+		t.Log(err)
+	}
+
+	if bytes, err := yaml.Marshal(defaultConfig); err != nil {
+		t.Log(err)
+	} else if err := Unmarshal(bytes, &configUnmarshal); err != nil {
+		t.Log(err)
+	}
+
+	// wrong bytes
+	if err := Unmarshal([]byte("wrong"), &configUnmarshal); err == nil {
+		t.Log(err)
 	}
 }

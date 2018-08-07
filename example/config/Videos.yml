@@ -1,0 +1,6 @@
+Name: videos
+Version: 1.0.39
+IPs:
+  tasks.frontend: tasks.videos
+Hosts:
+  - videos.example.com

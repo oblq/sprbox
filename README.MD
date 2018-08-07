@@ -18,6 +18,215 @@ SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSO
 go get -u github.com/oblq/sprbox
 ```
 
+## ToolBox autoload (init and config)
+
+##### 1. Define your toolbox.
+
+Fields can be of any type, sprbox will init nil struct pointers and pass config files where needed (structs or struct pointers).  
+To load a configuration file a struct must implement the [configurable](#using-your-package-in-sprbox) interface.  
+
+```go
+type ToolBox struct {
+	// By default sprbox will look for a file named like the
+	// struct field name (Services.*, case sensitive).
+	// workerful.<environment>.yml will override workerful.yml
+	// for the given env, if exist.
+	Services services.ServicesMap
+
+	// MediaProcessing does not implement the 'configurable' interface
+	// so it will be traversed recursively.
+	// Recursion only stop when no more embedded elements are found 
+	// or when a 'configurable' element is found instead.
+	// 'configurable' elements will not be traversed.
+	MediaProcessing struct {
+		// Optionally pass one or more specific config file(s), 
+		// separated by the pipe symbol: |.
+		// The latest will overrides others, from right to left,
+		// you can see that using sprbox.SetDebug(true).
+		// sprbox will always try to find the file named
+		// like the struct field first (Pictures.*).
+		// File extension can be omitted.
+		Pictures services.Service `sprbox:"MPPict1|MPPict2"`
+		Videos   services.Service
+	}
+
+	WP  Workerful
+	// Workerful implement the 'configurableInCollections' interface,
+	// so it can be loaded also directly inside slices or maps.
+	WPS []Workerful 
+
+	// will print the error in console
+	ToolMissingConfig *Tool
+
+	// Optionally add the 'omit' value to skip a field.
+	OmittedTool Tool `sprbox:"omit"`
+}
+
+var ToolBox MyToolBox
+```
+
+##### 2. Init and configure the toolbox in one line.  
+
+In `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.*`) will override generic ones (`cfg.*`):  
+
+```go
+sprbox.PrintInfo()
+// sprbox.SetDebug(true) // optionally set debug mode
+sprbox.LoadToolBox(&ToolBox, "./config")
+```
+
+![loading](start.png)
+
+## The build environment
+ 
+The build environment is determined matching a ***tag*** against some predefined environment specific RegEx, since any of the env's RegEx can be edited users have the maximum flexibility on the method to use.  
+For instance, the machine hostname (`cat /etc/hostname`) can be used.
+
+sprbox will try to grab that tag in three different ways, in a precise order, if one can't be determined it will check for the next one:
+
+1. The `BUILDENV` var in sprbox package:
+    ```go
+    sprbox.BUILDENV = "dev"
+    ```
+    Since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
+    ```bash
+    LDFLAGS="-X ${GOPATH:-$HOME/go}/src/github.com/oblq/sprbox.BUILDENV=develop"
+    go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api
+    ```
+
+2. The environment variable `'BUILD_ENV'`:
+    ```go
+    // sprbox.EnvVarKey is 'BUILD_ENV'
+    os.Setenv(sprbox.EnvVarKey, "dev")
+    ```
+
+3. The Git branch name (Gitflow supported).  
+By default the working dir is used, you can pass a different git repository path for this:  
+    ```go
+    sprbox.VCS = sprbox.NewRepository("path/to/repo")
+    println(sprbox.VCS.BranchName) // Commit, Tag, Build, Path and Error
+    sprbox.VCS.PrintInfo()
+    ```  
+
+Every environment has a set of default RegEx:
+
+```
+Production  = []string{"production", "master"}
+Staging     = []string{"staging", "release/*", "hotfix/*"}
+Testing     = []string{"testing", "test", "feature/*"}
+Development = []string{"development", "develop", "dev"}
+Local       = []string{"local"}
+```
+
+...and they can be edited as needed:
+
+```go
+sprbox.Testing.SetExps([]string{"testing", "test"})
+sprbox.Testing.AppendExp("feature/f*")
+println("matched:", sprbox.Testing.MatchTag("feature/f5"))
+```  
+
+Finally you can check the current env in code with:
+
+```go
+if sprbox.Env() == sprbox.Production { 
+    doSomething() 
+}
+
+sprbox.Env().PrintInfo()
+
+sprbox.EnvSubDir("static") // -> "static/<environment>"
+```
+ 
+## Using your package in sprbox
+
+To start using your package in `sprbox` you just need to implement the `configurable` interface:
+
+```go
+type configurable interface {
+	SpareConfig([]string) error
+}
+
+// optional, allow to load the package from a slice or a map directly.
+// See the example.
+type configurableInCollection interface {
+	SpareConfigBytes([]byte) error
+}
+```
+
+Example:
+
+```go
+type MyPackage struct {
+	Something string `yaml:"something"`
+}
+
+// SpareConfig is the sprbox 'configurable' interface implementation.
+// (mp *MyPackage) is automatically initialized with a pointer to MyPackage{}
+// so it will never be nil, but needs configuration.
+func (mp *MyPackage) SpareConfig(configFiles []string) (err error) {
+	var config *MyPackageConfig
+	err = sprbox.LoadConfig(&cfg, configFiles...)    	
+	mp.DoSomethingWithConfig(config)
+	return
+}
+
+// SpareConfigBytes optionally allow to load MyPackage inside a slice or a map directly.
+func (mp *MyPackage) SpareConfigBytes(configBytes []byte) (err error) {
+	var config *MyPackageConfig
+	err = sprbox.Unmarshal(configBytes, &cfg)
+	mp.DoSomethingWithConfig(config)
+	return
+}
+```
+
+Add `sprbox` in your repo topics and/or the 'sprbox-ready' badge if you like it: [![sprbox](https://img.shields.io/badge/sprbox-ready-green.svg)](https://github.com/oblq/sprbox)  
+
+
+## Embed third-party packages in sprbox
+
+Suppose we want to embed `packagex.StructX`:
+
+```go
+type StructX struct {
+	*packagex.StructX
+}
+
+func (sx *StructX) SpareConfig(configFiles []string) (err error) {
+	var cfg packagex.Config
+	err = sprbox.LoadConfig(&cfg, configFiles...)    	
+	sx.StructX = packagex.NewStructX(cfg)
+	return
+}
+
+// SpareConfigBytes optionally allow to load StructX inside a slice or a map directly.
+func (sx *StructX) SpareConfigBytes(configBytes []byte) (err error) {
+	var cfg packagex.Config
+	err = sprbox.Unmarshal(configBytes, &cfg)
+	sx.StructX = packagex.NewStructX(cfg)
+	return
+}
+```
+
+From here on you can use the StructX in a toolbox with automatic init/config:
+
+```go
+type ToolBox struct {
+	SX StructX
+}
+
+var App ToolBox
+
+func init() {
+	// ./config must contain SX.(yml|yaml|json|toml) config file in that case.
+	sprbox.LoadToolBox(&App, "./config") 
+	
+	// Call any of the packagex.StructX's funcs on SX.
+	// Initialized and configured.
+	App.SX.DoSomething()
+}
+```
+
 ## Agnostic, layered, config unmarshaling
 
 Given that project structure:
@@ -40,7 +249,7 @@ pg.production.yaml:
 port: 2345
 ```
 
-...to unmarshal that config files to a struct is simple like that:
+...to unmarshal that config files to a struct you just need to call `sprbox.LoadConfig(&pgConfig, "config/pg.yaml")`:
 
 ```go
 package main
@@ -91,8 +300,8 @@ It is possible to load multiple separated config files, also of different type, 
 ```go
 func main() {
 	// File extension can be omitted:
-	var pusher PushNotifications	
-	sprbox.LoadConfig(&pusher, "config/pusher", "config/pg")
+	var pusherConfig PushNotificationsConfig	
+	sprbox.LoadConfig(&pusherConfig, "config/pusher.yml", "config/postgres.json")
 }
 ```
 
@@ -106,189 +315,19 @@ To read the configuration at runtime sprbox can load multiple config files on a 
 mergedConfigMap, err := sprbox.LoadConfigMap("config/cfg1.yml", "config/cfg2.toml", "config/cfg3.json")
 ```
 
-## ToolBox autoload (init and config)
-
-##### 1. Define your toolbox.
-
-Fields can be of any type, sprbox will init nil struct pointers and pass config files where needed (structs or struct pointers).  
-To load a configuration file a struct must implement the [configurable](#using-your-package-in-sprbox) interface.  
-
-```go
-type MyToolBox struct {
-    // By default sprbox will look for a config file named 
-    // like the struct field (Pusher.*, case sensitive).
-    Pusher PushNotifications
-    
-    // You can define one or more specific config file(s), 
-    // separated by the pipe symbol: |.
-    // The latest will overrides others, from right to left,
-    // you can see that using sprbox.SetDebug(true).
-    // sprbox will always try to find the file named
-    // like the struct field first (Pusher2.*).
-    // File extension can be omitted.
-    Pusher2 PushNotifications `sprbox:"pusher|postgres"`
-
-    // workerful.<environment>.yml will override workerful.yml
-    // for the given env, if exist.
-    WP *workerful.Workerful `sprbox:"workerful.yml"`
-
-    // ...or you can skip auto-config and do it later manually.
-    AnOmittedTool Tool `sprbox:"omit"`
-}
-
-var ToolBox MyToolBox
-```
-
-##### 2. Init and configure the toolbox in one line.  
-
-As for the `sprbox.LoadConfig()` func, also in `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.*`) will override the universal one (`cfg.*`):  
-
-```go
-// sprbox.SetDebug(true) // optionally set debug mode
-sprbox.LoadToolBox(&ToolBox, "./config")
-```
-
-![loading](./ScreenShot.png)
-
-## The build environment
- 
-The build environment is determined matching a ***tag*** against some predefined environment specific RegEx, since any of the env's RegEx can be edited users have the maximum flexibility on the method to use.  
-For instance, the machine hostname (`cat /etc/hostname`) can be used.
-
-sprbox will try to grab that tag in three different ways, in a precise order, if one can't be determined it will check for the next one:
-
-1. The `BUILDENV` var in sprbox package:
-    ```go
-    sprbox.BUILDENV = "dev"
-    ```
-    Since it is an exported string, can also be interpolated with `-ldflags` at build/run time:  
-    ```bash
-    LDFLAGS="-X ${GOPATH:-$HOME/go}/src/github.com/oblq/sprbox.BUILDENV=develop"
-    go build -ldflags "${LDFLAGS}" -v -o ./api_bin ./api
-    ```
-
-2. The environment variable `'BUILD_ENV'`:
-    ```go
-    // sprbox.EnvVarKey is 'BUILD_ENV'
-    os.Setenv(sprbox.EnvVarKey, "dev")
-    ```
-
-3. The Git branch name (Gitflow supported).  
-By default the working dir is used, you can pass a different git repository path for this:  
-    ```go
-    sprbox.VCS = sprbox.NewRepository("path/to/repo")
-    println(sprbox.VCS.BranchName) // Commit, Tag, Build, Path and Error
-    sprbox.VCS.PrintInfo()
-    ```  
-
-Every environment has a set of default RegEx:
-
-```
-Production  = []string{"production", "master"}
-Staging     = []string{"staging", "release/*", "hotfix/*"}
-Testing     = []string{"testing", "test", "feature/*"}
-Development = []string{"development", "develop", "dev"}
-Local       = []string{"local"}
-```
-
-Editing is simple:
-
-```go
-sprbox.Testing.SetExps([]string{"testing", "test"})
-sprbox.Testing.AppendExp("feature/f*")
-println("matched:", sprbox.Testing.MatchTag("feature/f5"))
-```  
-
-Finally you can check the current env in code with:
-
-```go
-if sprbox.Env() == sprbox.Production { 
-    doSomething() 
-}
-
-sprbox.Env().PrintInfo()
-
-sprbox.EnvSubDir("static") // -> "static/<environment>"
-```
- 
-## Using your package in sprbox
-
-To start using your package in `sprbox` you just need to implement the `configurable` interface:
-
-```go
-type configurable interface {
-	SpareConfig([]byte) error
-}
-```
-
-Example:
-
-```go
-type MyPackage struct {
-	Something string `yaml:"something"`
-}
-
-// SpareConfig is the sprbox 'configurable' interface implementation.
-// (mp *MyPackage) is automatically initialized with a pointer to MyPackage{}
-// so it will never be nil, but needs configuration.
-func (mp *MyPackage) SpareConfig(configData []byte) (err error) {
-	var config *MyPackageConfig
-	err = sprbox.Unmarshal(configData, &config)
-	mp.DoSomethingWithConfig(config)
-	return
-}
-```
-
-Add `sprbox` in your repo topics and/or the 'sprbox-ready' badge if you like it: [![sprbox](https://img.shields.io/badge/sprbox-ready-green.svg)](https://github.com/oblq/sprbox)  
-
-
-## Embed third-party packages in sprbox
-
-Suppose we want to embed `packagex.StructX`:
-
-```go
-type StructX struct {
-	*packagex.StructX
-}
-
-// Since the config file format is known here
-// you can use yaml, toml or json unmarshaler directly.
-// Anyway sprbox.Unmarshal() will recognize any of those formats,
-// allowing you to also use different config files format.
-func (sx *StructX) SpareConfig(configData []byte) (err error) {
-	var cfg packagex.Config
-	err = sprbox.Unmarshal(configData, &cfg)    	
-	sx.StructX = packagex.NewStructX(cfg)
-	return
-}
-```
-
-From here on you can use the StructX in a toolbox with automatic init/config:
-
-```go
-type ToolBox struct {
-	SX StructX
-}
-
-var App ToolBox
-
-func init() {
-	// ./config must contain SX.(yml|yaml|json|toml) config file in that case.
-	sprbox.LoadToolBox(&App, "./config") 
-	
-	// Call any of the packagex.StructX's funcs on SX.
-	// Initialized and configured.
-	App.SX.DoSomething()
-}
-```
 ## Examples
 - [example](example)
 
 ## Compatible packages
 
-- [`workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
+#####Included:
+- [`common`](common)
+    - [`Services`](common/services) Service/micro-service/monolith abstraction, get services URL, Proxy, hold custom data etc...
+    
+#####External:
+- [`Workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
 
-## Used packages
+## Vendor packages
 
 - [`gopkg.in/yaml.v2`](https://github.com/go-yaml/yaml)  
 - [`github.com/BurntSushi/toml`](https://github.com/BurntSushi/toml)

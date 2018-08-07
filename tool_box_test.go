@@ -13,7 +13,12 @@ type Tool struct {
 }
 
 // SpareConfig is the 'configurable' interface implementation.
-func (c *Tool) SpareConfig(config []byte) error {
+func (c *Tool) SpareConfig(config []string) error {
+	LoadConfig(c, config...)
+	return nil
+}
+
+func (c *Tool) SpareConfigBytes(config []byte) error {
 	Unmarshal(config, c)
 	return nil
 }
@@ -24,7 +29,7 @@ type ToolError struct {
 }
 
 // SpareConfig is the 'configurable' interface implementation.
-func (c *ToolError) SpareConfig(config []byte) error {
+func (c *ToolError) SpareConfig(config []string) error {
 	return errors.New("fake error for test")
 }
 
@@ -33,20 +38,91 @@ type ToolNoConfigurable struct {
 	ConfigPath string
 }
 
+type ConfigurableSlice []Tool
+type ConfigurableSlicePtr []*Tool
+
+func (c *ConfigurableSlice) SpareConfig(config []string) error {
+	LoadConfig(c, config...)
+	return nil
+}
+
+func (c *ConfigurableSlicePtr) SpareConfig(config []string) error {
+	LoadConfig(c, config...)
+	return nil
+}
+
+type ConfigurableMap map[string]Tool
+type ConfigurableMapPtr map[string]*Tool
+
+func (c *ConfigurableMap) SpareConfig(config []string) error {
+	LoadConfig(c, config...)
+	return nil
+}
+
+func (c *ConfigurableMapPtr) SpareConfig(config []string) error {
+	LoadConfig(c, config...)
+	return nil
+}
+
 type Box struct {
 	Tool                  Tool
 	PTRTool               *Tool
 	ToolNoConfigurable    ToolNoConfigurable
 	PTRToolNoConfigurable *ToolNoConfigurable
+
+	ToolSlice    []Tool
+	ToolSlicePTR []*Tool
+	PTRToolSlice *[]Tool
+	ToolMap      map[string]Tool
+	ToolMapPTR   map[string]*Tool
+	PTRToolMap   *map[string]Tool
+
+	ConSlice    ConfigurableSlice     `sprbox:"ToolSlice.yml"`
+	ConSlicePtr *ConfigurableSlicePtr `sprbox:"ToolSlice.yml"`
+	ConMap      ConfigurableMap       `sprbox:"ToolMap.yml"`
+	ConMapPtr   *ConfigurableMapPtr   `sprbox:"ToolMap.yml"`
+
+	ConSliceOmit ConfigurableSlice `sprbox:"omit"`
+	ConMapOmit   ConfigurableMap   `sprbox:"omit"`
 }
 
 func TestBox(t *testing.T) {
+	SetDebug(true)
+
 	createJSON(defaultBoxConfig, "Tool.json", t)
 	createTOML(defaultBoxConfig, "PTRTool.toml", t)
+
+	ts := []Tool{
+		Tool{"test1"},
+		Tool{"test2"},
+	}
+	createYAML(ts, "ToolSlice.yml", t)
+	createYAML(ts, "PTRToolSlice.yml", t)
+
+	tsptr := []*Tool{
+		&Tool{"test1"},
+		&Tool{"test2"},
+	}
+	createJSON(tsptr, "ToolSlicePTR.json", t)
+
+	tm := map[string]Tool{
+		"test1": Tool{"test1"},
+		"test2": Tool{"test2"},
+	}
+	createYAML(tm, "ToolMap.yml", t)
+	createTOML(tm, "PTRToolMap.toml", t)
+
+	tmptr := map[string]*Tool{
+		"test1": &Tool{"test1"},
+		"test2": &Tool{"test2"},
+	}
+	createJSON(tmptr, "ToolMapPTR.json", t)
+
 	defer removeConfigFiles(t)
 
+	SetFileSearchCaseSensitive(true)
+
 	PrintInfo()
-	SetDebug(true)
 
 	var test Box
 	if err := LoadToolBox(&test, configPath); err != nil {
@@ -65,6 +141,24 @@ func TestBox(t *testing.T) {
 		t.Error("test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 	}
 
+	if len(test.ToolSlice[0].ConfigPath) == 0 {
+		t.Error("test.ToolSlice.ConfigPath is empty")
+	}
+	if len(test.ToolSlicePTR[0].ConfigPath) == 0 {
+		t.Error("test.ToolSlicePTR.ConfigPath is empty")
+	}
+	if len((*test.PTRToolSlice)[0].ConfigPath) == 0 {
+		t.Error("test.PTRToolSlice.ConfigPath is empty")
+	}
+	if len(test.ToolMap["test1"].ConfigPath) == 0 {
+		t.Error("test.ToolMap.ConfigPath is empty")
+	}
+	if len(test.ToolMapPTR["test1"].ConfigPath) == 0 {
+		t.Error("test.ToolMapPTR.ConfigPath is empty")
+	}
+	if len((*test.PTRToolMap)["test1"].ConfigPath) == 0 {
+		t.Error("test.PTRToolMap.ConfigPath is empty")
+	}
 	SetDebug(false)
 }
 
@@ -96,13 +190,25 @@ func TestPTRToolError(t *testing.T) {
 	}
 }
 
+func TestInvalidPointer(t *testing.T) {
+	var test1 *string
+	if err := LoadToolBox(&test1, configPath); err != errInvalidPointer {
+		t.Error(err)
+	}
+
+	var test2 *Box
+	if err := LoadToolBox(test2, configPath); err != errInvalidPointer {
+		t.Error(err)
+	}
+}
+
 type BoxNil struct {
 	Tool1 Tool
 	Tool2 *Tool
 }
 
 func TestNilBox(t *testing.T) {
-	ColoredLogs(false)
+	SetColoredLogs(false)
 
 	createJSON(defaultBoxConfig, "Tool1.json", t)
 	createTOML(defaultBoxConfig, "Tool2.toml", t)
@@ -137,7 +243,7 @@ func TestNilBox(t *testing.T) {
 		t.Error("test3.Tool2.ConfigPath:", test3.Tool2.ConfigPath)
 	}
 
-	ColoredLogs(true)
+	SetColoredLogs(true)
 }
 
 type BoxConfigFiles struct {
@@ -242,31 +348,5 @@ func TestBoxAfterConfig(t *testing.T) {
 	}
 	if test.Tool2.ConfigPath != tString {
 		t.Error("test2.ConfigPath:", test.Tool2.ConfigPath)
-	}
-}
-
-func TestNotAStructErr(t *testing.T) {
-	test := []string{"test"}
-	if err := LoadToolBox(&test, configPath); err != errInvalidPointer {
-		t.Error(err)
-	}
-}
-
-// ToolNotAStruct is a struct implementing 'configurable' interface.
-type ToolNotAStruct []string
-
-// SpareConfig is the 'configurable' interface implementation.
-func (c *ToolNotAStruct) SpareConfig(config []byte) error {
-	return nil
-}
-
-type BoxNotAStructTool struct {
-	NotAStruct ToolNotAStruct
-}
-
-func TestToolNotAStruct(t *testing.T) {
-	var test BoxNotAStructTool
-	if err := LoadToolBox(&test, configPath); err != nil {
-		t.Error(err)
 	}
 }

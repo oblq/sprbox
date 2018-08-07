@@ -1,0 +1,10 @@
+Name: pictures # name overriden
+Version: 1
+ProxyService:
+IPs:
+  tasks.api: tasks.pictures # Docker Swarm
+  api: pictures # Docker
+  192.168.1.10: 127.0.0.1 # local development
+Hosts:
+  - lvh.me # host overriden
+Basepath: "{{.Name}}/v{{.Version}}"

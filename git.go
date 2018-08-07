@@ -62,7 +62,7 @@ func (r *Repository) PrintInfo() {
 
 	gitLog.Println("Git Branch:", r.BranchName)
 	gitLog.Println("Git Commit:", r.Commit)
-	gitLog.Println("Git Build:", r.Build)
 	gitLog.Println("Git Tag:", r.Tag)
+	gitLog.Println("Git Build:", r.Build)
 	fmt.Println("")
 }
