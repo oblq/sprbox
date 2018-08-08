@@ -14,6 +14,14 @@ SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSO
 
 ## Installation
 
+Using [dep](https://github.com/golang/dep):
+
+```sh
+dep ensure -add github.com/oblq/sprbox@master
+```
+
+...or go get:
+
 ```sh
 go get -u github.com/oblq/sprbox
 ```
@@ -316,7 +324,7 @@ Keep in mind that:
 - [example](example)
 
 To start it run: 
-```bash 
+```sh 
 make example
 ```
  
