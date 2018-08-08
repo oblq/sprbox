@@ -329,7 +329,7 @@ make example
 ```
  
 
-## Compatible packages
+## Ready packages
 
 ##### Included:
 - [`common`](common)

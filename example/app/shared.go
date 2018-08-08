@@ -36,7 +36,7 @@ type ToolBox struct {
 	OmittedTool Tool `sprbox:"omit"`
 }
 
-// App is the app toolbox
+// Shared is the app toolbox, `app.Shared`.
 var Shared ToolBox
 
 func init() {
