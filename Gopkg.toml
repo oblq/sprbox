@@ -24,7 +24,7 @@
 #   go-tests = true
 #   unused-packages = true
 
-ignored = ["github.com/oblq/workerful", "gopkg.in/yaml.v1"]
+ignored = ["github.com/oblq/workerful"]
 
 [[constraint]]
   name = "github.com/BurntSushi/toml"
