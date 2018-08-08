@@ -315,6 +315,12 @@ Keep in mind that:
 ## Examples
 - [example](example)
 
+To start it run: 
+```bash 
+make example
+```
+ 
+
 ## Compatible packages
 
 ##### Included:
