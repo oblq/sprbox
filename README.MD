@@ -22,14 +22,14 @@ go get -u github.com/oblq/sprbox
 
 ##### 1. Define your toolbox.
 
-Fields can be of any type, sprbox will init nil struct pointers and pass config files where needed (structs or struct pointers).  
-To load a configuration file a struct must implement the [configurable](#using-your-package-in-sprbox) interface.  
+Fields can be of any type, sprbox will init pointers and pass config files where needed (configurable structs, struct pointers, slices or maps).  
+To load a configuration file a field must implement the [configurable](#using-your-package-in-sprbox) interface.  
 
 ```go
 type ToolBox struct {
 	// By default sprbox will look for a file named like the
 	// struct field name (Services.*, case sensitive).
-	// workerful.<environment>.yml will override workerful.yml
+	// Services.<environment>.yml will override Services.yml
 	// for the given env, if exist.
 	Services services.ServicesMap
 
@@ -39,7 +39,7 @@ type ToolBox struct {
 	// or when a 'configurable' element is found instead.
 	// 'configurable' elements will not be traversed.
 	MediaProcessing struct {
-		// Optionally pass one or more specific config file(s), 
+		// Optionally pass one or more specific config file name, 
 		// separated by the pipe symbol: |.
 		// The latest will overrides others, from right to left,
 		// you can see that using sprbox.SetDebug(true).
@@ -52,7 +52,8 @@ type ToolBox struct {
 
 	WP  Workerful
 	// Workerful implement the 'configurableInCollections' interface,
-	// so it can be loaded also directly inside slices or maps.
+	// so it can be loaded also directly inside 
+	// slices or maps using a single config file.
 	WPS []Workerful 
 
 	// will print the error in console
@@ -107,6 +108,7 @@ By default the working dir is used, you can pass a different git repository path
     println(sprbox.VCS.BranchName) // Commit, Tag, Build, Path and Error
     sprbox.VCS.PrintInfo()
     ```  
+4. When you run tests the environment will be set automatically to 'testing' if not set manually and no git repo is found in the project root.
 
 Every environment has a set of default RegEx:
 
@@ -118,7 +120,7 @@ Development = []string{"development", "develop", "dev"}
 Local       = []string{"local"}
 ```
 
-...and they can be edited as needed:
+...and they can be edited:
 
 ```go
 sprbox.Testing.SetExps([]string{"testing", "test"})
@@ -148,7 +150,6 @@ type configurable interface {
 }
 
 // optional, allow to load the package from a slice or a map directly.
-// See the example.
 type configurableInCollection interface {
 	SpareConfigBytes([]byte) error
 }
@@ -293,7 +294,7 @@ func main() {
 ```
 
 Depending on the [build environment](#the-build-environment), trying to load `config/pg.yml` will also load `config/pg.<environment>.yml` (eg.: `cfg.production.yml`).  
-If any environment-specific file will be found, for the current environment, that will override the universal one.  
+If any environment-specific file will be found, for the current environment, that will override the generic one.  
 
 It is possible to load multiple separated config files, also of different type, so components configs can be reused:
 
@@ -307,24 +308,20 @@ func main() {
 
 The file extension in the file path can be omitted, since sprbox can load YAML, TOML and JSON files it will search for `cfg.*` using RegEx, the config file itself must have an extension.  
 
-To read the configuration at runtime sprbox can load multiple config files on a map, anyway keep in mind that:
+Keep in mind that:
 1. YAML files uses lowercased keys by default, unless you define a custom field tag (struct field `Postgres` will become `"postgres"`, while in TOML or JSON it will remain `"Postgres"`).
-2. Embedded structs would be decoded as `map[interface{}]interface{}` in YAML, not `map[string]interface{}` as in JSON or TOML.
-
-```go
-mergedConfigMap, err := sprbox.LoadConfigMap("config/cfg1.yml", "config/cfg2.toml", "config/cfg3.json")
-```
+2. The default map interface is `map[interface{}]interface{}` in YAML, not `map[string]interface{}` as in JSON or TOML.
 
 ## Examples
 - [example](example)
 
 ## Compatible packages
 
-#####Included:
+##### Included:
 - [`common`](common)
-    - [`Services`](common/services) Service/micro-service/monolith abstraction, get services URL, Proxy, hold custom data etc...
+    - [`Services`](common/services) Service/micro-service/monolith abstraction, get services URL, Proxy, Version, Basepath, hold custom Data etc...
     
-#####External:
+##### External:
 - [`Workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
 
 ## Vendor packages
