@@ -145,24 +145,34 @@ if sprbox.Env() == sprbox.Production {
 }
 
 sprbox.Env().PrintInfo()
-
-sprbox.EnvSubDir("static") // -> "static/<environment>"
 ```
 
-Every environment has a `RunCompiled` boolean var which is used by the sprbox.CompiledPath() func.  
+##### Working with directories
 
-If the current build-environment has RunCompiled == true `sprbox.CompiledPath()` returns the path base, static files can stay side by side with the executable while it is possible to have a different location when the program is launched with `go run`.  
+Sparebox offer two utility funcs to work with directories.
+
+1. `EnvSubDir()`  
+...pretty much self-explanatory:
+    ```go
+    sprbox.EnvSubDir("static") // -> "static/<environment>" (eg.: "static/staging")
+    ```
+2. `CompiledPath()`  
+If the current build-environment has RunCompiled == true `sprbox.CompiledPath()` returns the path base, so static files can stay side by side with the executable while it is possible to have a different location when the program is launched with `go run`.  
 This allow to manage multiple packages in one project during development, for instance using a config path in the parent dir, side by side with the packages, while having the same config folder side by side with the executable where needed.
-```go
-sprbox.BUILDENV = sprbox.Development.ID()   
-
-sprbox.Development.RunCompiled = false   
-sprbox.CompiledPath("../static_files/config") // -> "../static_files/config"
-  
-sprbox.Development.RunCompiled = true   
-sprbox.CompiledPath("../static_files/config") // -> "config"
-```
-
+    ```go
+    sprbox.BUILDENV = sprbox.Development.ID()   
+    
+    sprbox.Development.RunCompiled = false   
+    sprbox.CompiledPath("../static_files/config") // -> "../static_files/config"
+      
+    sprbox.Development.RunCompiled = true   
+    sprbox.CompiledPath("../static_files/config") // -> "config"
+    ```
+    A simple usage example is:
+    ```go
+    sprbox.LoadToolBox(&myToolBox, sprbox.CompiledPath("../config"))
+    ```
+    By default only Production and Staging environments have `RunCompiled` true.
 ## Using your package in sprbox
 
 To start using your package in `sprbox` you just need to implement the `configurable` interface:
