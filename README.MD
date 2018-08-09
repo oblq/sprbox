@@ -80,7 +80,8 @@ In `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.
 
 ```go
 sprbox.PrintInfo()
-// sprbox.SetDebug(true) // optionally set debug mode
+// Optionally set debug mode.
+// sprbox.SetDebug(true)
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
@@ -147,7 +148,21 @@ sprbox.Env().PrintInfo()
 
 sprbox.EnvSubDir("static") // -> "static/<environment>"
 ```
- 
+
+Every environment has a `RunCompiled` boolean var which is used by the sprbox.CompiledPath() func.  
+
+If the current build-environment has RunCompiled == true `sprbox.CompiledPath()` returns the path base, static files can stay side by side with the executable while it is possible to have a different location when the program is launched with `go run`.  
+This allow to manage multiple packages in one project during development, for instance using a config path in the parent dir, side by side with the packages, while having the same config folder side by side with the executable where needed.
+```go
+sprbox.BUILDENV = sprbox.Development.ID()   
+
+sprbox.Development.RunCompiled = false   
+sprbox.CompiledPath("../static_files/config") // -> "../static_files/config"
+  
+sprbox.Development.RunCompiled = true   
+sprbox.CompiledPath("../static_files/config") // -> "config"
+```
+
 ## Using your package in sprbox
 
 To start using your package in `sprbox` you just need to implement the `configurable` interface:

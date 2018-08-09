@@ -53,7 +53,7 @@ func writeFiles(fileName string, bytes []byte, t *testing.T) {
 
 	fileNameExt := filepath.Ext(fileName)
 	fileNameNoExt := strings.TrimSuffix(fileName, fileNameExt)
-	fileNameEnv := fmt.Sprintf("%s.%s%s", fileNameNoExt, Env().String(), fileNameExt)
+	fileNameEnv := fmt.Sprintf("%s.%s%s", fileNameNoExt, Env().ID(), fileNameExt)
 	fileEnvPath := filepath.Join(configPath, fileNameEnv)
 	if err := ioutil.WriteFile(fileEnvPath, bytes, os.ModePerm); err != nil {
 		t.Errorf("failed to create config file: %v", err)
@@ -345,13 +345,13 @@ func TestEnvironmentFiles(t *testing.T) {
 
 	config := Tool{}
 	createYAML(config, "tool1.yml", t)
-	createJSON(config, "tool."+Env().String()+".json", t)
+	createJSON(config, "tool."+Env().ID()+".json", t)
 	createTOML(config, "tool.toml", t)
 	defer removeConfigFiles(t)
 
 	// '<path>/<file>.<environment>.*'
 	if files := configFilesByEnv(filepath.Join(configPath, "tool")); len(files) == 1 {
-		if files[0] != filepath.Join(configPath, "tool."+Env().String()+".json") {
+		if files[0] != filepath.Join(configPath, "tool."+Env().ID()+".json") {
 			t.Error("file not matched")
 		}
 	}
@@ -378,7 +378,7 @@ func TestEnvironmentFiles(t *testing.T) {
 	// case insensitive '<path>/<file>.<environment>.*'
 	fileSearchCaseSensitive = false
 	if files := configFilesByEnv(filepath.Join(configPath, "TOOL")); len(files) == 1 {
-		if files[0] != filepath.Join(configPath, "tool."+Env().String()+".json") {
+		if files[0] != filepath.Join(configPath, "tool."+Env().ID()+".json") {
 			t.Error("file not matched")
 		}
 	}

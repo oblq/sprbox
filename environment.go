@@ -40,11 +40,11 @@ var (
 
 // Default environment's configuration
 var (
-	Production  = &Environment{id: "production", exps: []string{"production", "master"}}
-	Staging     = &Environment{id: "staging", exps: []string{"staging", "release/*", "hotfix/*"}}
-	Testing     = &Environment{id: "testing", exps: []string{"testing", "test", "feature/*"}}
-	Development = &Environment{id: "development", exps: []string{"development", "develop", "dev"}}
-	Local       = &Environment{id: "local", exps: []string{"local"}}
+	Production  = &Environment{id: "production", exps: []string{"production", "master"}, RunCompiled: true}
+	Staging     = &Environment{id: "staging", exps: []string{"staging", "release/*", "hotfix/*"}, RunCompiled: true}
+	Testing     = &Environment{id: "testing", exps: []string{"testing", "test", "feature/*"}, RunCompiled: false}
+	Development = &Environment{id: "development", exps: []string{"development", "develop", "dev"}, RunCompiled: false}
+	Local       = &Environment{id: "local", exps: []string{"local"}, RunCompiled: false}
 )
 
 func init() {
@@ -73,7 +73,7 @@ func loadTag() {
 			return
 		}
 	} else if testingRegexp.MatchString(os.Args[0]) {
-		privateTAG = Testing.String()
+		privateTAG = Testing.ID()
 		inferredBy = fmt.Sprintf("'%s', inferred from the running file name (%s).", privateTAG, os.Args[0])
 		return
 	}
@@ -103,7 +103,37 @@ func Env() *Environment {
 
 // EnvSubDir returns <path>/<environment>
 func EnvSubDir(path string) string {
-	return filepath.Join(path, Env().String())
+	return filepath.Join(path, Env().ID())
+}
+
+// CompiledPath() returns the path base if RunCompiled == true
+// for the environment in use so that static files can
+// stay side by side with the executable
+// while it is possible to have a different location when the
+// program is launched with `go run`.
+// This allow to manage multiple packages in one project during development,
+// for instance using a config path in the parent dir, side by side with
+// the packages, while having the same config folder side by side with
+// the executable where needed.
+//
+// Can be used in:
+//  sprbox.LoadToolBox(&myToolBox, sprbox.CompiledPath("../config"))
+//
+// Example:
+//  Local.RunCompiled = false
+//  BUILDENV = Local.ID()
+//  CompiledPath("../static_files/config") // -> "../static_files/config"
+//
+//  Staging.RunCompiled = true
+//  BUILDENV = Staging.ID()
+//  CompiledPath("../static_files/config") // -> "config"
+//
+// By default only Production and Staging environments have RunCompiled = true.
+func CompiledPath(path string) string {
+	if Env().RunCompiled {
+		return filepath.Base(path)
+	}
+	return path
 }
 
 // Environment struct.
@@ -111,6 +141,16 @@ type Environment struct {
 	id     string
 	exps   []string
 	regexp *regexp.Regexp
+
+	// RunCompiled true means that the program run from
+	// a precompiled binary for that environment.
+	// CompiledPath() returns the path base if RunCompiled == true
+	// so that static files can stay side by side with the executable
+	// while it is possible to have a different location when the
+	// program is launched with `go run`.
+	//
+	// By default only Production and Staging environments have RunCompiled = true.
+	RunCompiled bool
 }
 
 // MatchTag check if the passed tag match that environment,
@@ -136,20 +176,20 @@ func (e *Environment) compileExps() {
 	e.regexp = regexp.MustCompile(regex)
 }
 
-// String returns the environment name,
+// ID returns the environment id,
 // which are also a valid tag for the current environment.
-func (e *Environment) String() string {
+func (e *Environment) ID() string {
 	return e.id
 }
 
 // Info return some environment info.
 func (e *Environment) Info() string {
-	return fmt.Sprintf("%s - tag: %s\n", strings.ToUpper(e.String()), inferredBy)
+	return fmt.Sprintf("%s - tag: %s\n", strings.ToUpper(e.ID()), inferredBy)
 }
 
 // PrintInfo print some environment info in console.
 func (e *Environment) PrintInfo() {
-	info := fmt.Sprintf("%s - tag: %s\n", green(strings.ToUpper(e.String())), inferredBy)
+	info := fmt.Sprintf("%s - tag: %s\n", green(strings.ToUpper(e.ID())), inferredBy)
 	envLog := kvLogger{}
 	envLog.Println("Environment:", info)
 	//envLog.Println("Config path:", ansi.Green(ConfigPathByEnv(configPath))+"\n")

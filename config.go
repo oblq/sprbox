@@ -102,7 +102,7 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 		if !fileSearchCaseSensitive {
 			format = "(?i)(^%s)%s$"
 		}
-		regexEnv = regexp.MustCompile(fmt.Sprintf(format, fmt.Sprintf("%s.%s", extTrimmed, Env().String()), ext))
+		regexEnv = regexp.MustCompile(fmt.Sprintf(format, fmt.Sprintf("%s.%s", extTrimmed, Env().ID()), ext))
 		regex = regexp.MustCompile(fmt.Sprintf(format, extTrimmed, ext))
 
 		// look for the config file in the config path (eg.: tool.yml)
