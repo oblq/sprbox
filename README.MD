@@ -10,7 +10,8 @@
 
 
 Dynamically create toolbox singletons with automatic configuration based on your build environment.  
-SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSON and Environment vars), it will help you in keeping your projects and their configuration files ordered and maintainable.
+SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSON and Environment vars).  
+Keep your projects and their configuration files ordered and maintainable.
 
 ## Installation
 
