@@ -310,7 +310,7 @@ func main() {
 	
 	// Setting 'production' build-environment,
 	// so 'pg.production.yml' will override 'pg.yml'.
-	sprbox.BUILDENV = sprbox.Production.String() // -> 'production'
+	sprbox.BUILDENV = sprbox.Production.ID() // -> 'production'
 	
 	var pgConfig PostgresConfig	
 	if err := sprbox.LoadConfig(&pgConfig, "config/pg.yaml"); err != nil {
