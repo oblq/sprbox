@@ -120,13 +120,13 @@ func EnvSubDir(path string) string {
 //  sprbox.LoadToolBox(&myToolBox, sprbox.CompiledPath("../config"))
 //
 // Example:
-//  Local.RunCompiled = false
-//  BUILDENV = Local.ID()
-//  CompiledPath("../static_files/config") // -> "../static_files/config"
+//  sprbox.Development.RunCompiled = false
+//  sprbox.BUILDENV = sprbox.Development.ID()
+//  sprbox.CompiledPath("../static_files/config") // -> "../static_files/config"
 //
-//  Staging.RunCompiled = true
-//  BUILDENV = Staging.ID()
-//  CompiledPath("../static_files/config") // -> "config"
+//  sprbox.Development.RunCompiled = true
+//  sprbox.BUILDENV = sprbox.Development.ID()
+//  sprbox.CompiledPath("../static_files/config") // -> "config"
 //
 // By default only Production and Staging environments have RunCompiled = true.
 func CompiledPath(path string) string {
