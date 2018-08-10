@@ -375,4 +375,4 @@ make example
 
 ## License
 
-Workerful is available under the MIT license. See the [LICENSE](./LICENSE) file for more information.
+SpareBox is available under the MIT license. See the [LICENSE](./LICENSE) file for more information.
