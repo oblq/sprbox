@@ -20,15 +20,16 @@ type Service struct {
 	Version string `sprbox:"default=1" yaml:"Version"`
 
 	// ProxyService is optional, default no proxy.
-	// It only works in ServicesSlice:
+	// It only works inside ServicesMap struct:
 	// the proxy will be automatically populated based
 	// on the proxy service name.
 	ProxyService string `yaml:"ProxyService"`
 
-	// Proxy will be automatically populated in ServicesSlice.
+	// Proxy will be automatically populated inside ServicesMap struct.
+	// Can be set manually in the config file otherwise.
 	Proxy *Service
 
-	// IPList contains the ip list of the machines running this service
+	// IPs contains the ip list of the machines running this service
 	// in the format <public:private> (e.g. 192.168.1.10: 127.0.0.1 locally).
 	// use <tasks.serviceName>:<tasks.serviceName> in Docker swarm
 	// use <serviceName>:<serviceName> in Docker
@@ -44,16 +45,20 @@ type Service struct {
 	// and they're used in URLAlternatives().
 	Hosts []string `yaml:"Hosts"`
 
-	// BasepathName is optional, it will be parsed by
+	// Basepath is optional, it will be parsed by
 	// the template package, so you can use placeholders here
-	// (eg.: "{{.Name}}/v{{.Version}}")
+	// (eg.: "{{.Name}}/v{{.Version}}" -> 'api/v1')
 	Basepath string `yaml:"Basepath"`
 
 	// Data is optional, set custom data here.
 	Data map[string]interface{} `yaml:"Data"`
 }
 
-// SpareConfig is the sprbox configurable interface.
+// SpareConfig is the sprbox 'configurable' interface.
+// if Env() == local the service's primary host
+// will be overriden by outbound IP,
+// that will make possible to connect to it
+// through your local network (wi-fi) also.
 func (s *Service) SpareConfig(configFiles []string) (err error) {
 	if err = sprbox.LoadConfig(s, configFiles...); err == nil {
 		if sprbox.Env() == sprbox.Local {
@@ -63,17 +68,17 @@ func (s *Service) SpareConfig(configFiles []string) (err error) {
 			} else {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
-			//fmt.Printf(`
-			//Env() == local: service's primary host overriden by outbound IP (%s),
-			//that will make possible to connect to it through your local network (wi-fi) also.
-			//`, PublicIP)
 		}
 		return s.parseBasePath()
 	}
 	return
 }
 
-// SpareConfig is the sprbox configurableInCollections interface.
+// SpareConfigBytes is the sprbox 'configurableInCollections' interface.
+// if Env() == local the service's primary host
+// will be overriden by outbound IP,
+// that will make possible to connect to it
+// through your local network (wi-fi) also.
 func (s *Service) SpareConfigBytes(configBytes []byte) (err error) {
 	if err = sprbox.Unmarshal(configBytes, s); err == nil {
 		if sprbox.Env() == sprbox.Local {
@@ -83,25 +88,19 @@ func (s *Service) SpareConfigBytes(configBytes []byte) (err error) {
 			} else {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
-			//fmt.Printf(`
-			//Env() == local: service's primary host overriden by outbound IP (%s),
-			//that will make possible to connect to it through your local network (wi-fi) also.
-			//`, PublicIP)
 		}
 		return s.parseBasePath()
 	}
 	return
 }
 
-func (s *Service) parseBasePath() error {
-	basePathTemp, err := template.New("basepath").Parse(s.Basepath)
-	if err != nil {
+func (s *Service) parseBasePath() (err error) {
+	var basePathTemp *template.Template
+	if basePathTemp, err = template.New("basepath").Parse(s.Basepath); err != nil {
 		return errors.New("invalid basepath template: " + s.Basepath)
 	}
 	buff := &bytes.Buffer{}
-	if err := basePathTemp.Execute(buff, s); err != nil {
-		return err
-	}
+	err = basePathTemp.Execute(buff, s)
 	s.Basepath = buff.String()
 	return nil
 }

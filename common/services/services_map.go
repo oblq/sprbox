@@ -27,8 +27,6 @@ func init() {
 }
 
 // SpareConfig is the sprbox 'configurable' interface implementation.
-// (mp *MyPackage) is automatically initialized with a pointer to MyPackage{}
-// so it will never be nil, but needs configuration.
 func (s *ServicesMap) SpareConfig(configFiles []string) (err error) {
 	if err = sprbox.LoadConfig(s, configFiles...); err == nil {
 		return s.parseServices()
@@ -36,6 +34,10 @@ func (s *ServicesMap) SpareConfig(configFiles []string) (err error) {
 	return
 }
 
+// if Env() == local the service's primary host
+// will be overriden by outbound IP,
+// that will make possible to connect to it
+// through your local network (wi-fi) also.
 func (s *ServicesMap) parseServices() error {
 	for sName, service := range *s {
 		service.Name = sName
@@ -46,14 +48,9 @@ func (s *ServicesMap) parseServices() error {
 			} else {
 				service.Hosts = append(service.Hosts, PublicIP)
 			}
-			//fmt.Printf(`
-			//Env() == local: service's primary host overriden by outbound IP (%s),
-			//that will make possible to connect to it through your local network (wi-fi) also.
-			//`, PublicIP)
 		}
 
-		proxy, _ := (*s)[service.ProxyService]
-		service.Proxy = proxy
+		service.Proxy, _ = (*s)[service.ProxyService]
 
 		if err := service.parseBasePath(); err != nil {
 			return err

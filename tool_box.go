@@ -282,7 +282,11 @@ func printLoadResult(objNameType string, t reflect.Type, err error) {
 	if len(objNameType) == 0 {
 		objNameType = t.Name()
 	}
-	objNameType = fmt.Sprintf("%v (%v)", blue(objNameType), t.String())
+	objType := t.String()
+	if len(objType) > 50 {
+		objType = t.Kind().String()
+	}
+	objNameType = fmt.Sprintf("%v (%v)", blue(objNameType), objType)
 	objNameType = fmt.Sprintf("%-50v", objNameType)
 	if err != nil {
 		if err == errOmit {

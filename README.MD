@@ -10,9 +10,18 @@
 
 
 Dynamically create toolbox singletons with automatic configuration based on your build environment.  
-SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSON and Environment vars), it will help you in keeping your projects and their configuration files ordered and maintainable.
+SpareBox is also an agnostic, layered, config parser (supporting YAML, TOML, JSON and Environment vars).  
+Keep your projects and their configuration files ordered and maintainable.
 
 ## Installation
+
+Using [dep](https://github.com/golang/dep):
+
+```sh
+dep ensure -add github.com/oblq/sprbox@master
+```
+
+...or go get:
 
 ```sh
 go get -u github.com/oblq/sprbox
@@ -72,7 +81,8 @@ In `sprbox.LoadToolBox()` environment-specific config files (`cfg.<environment>.
 
 ```go
 sprbox.PrintInfo()
-// sprbox.SetDebug(true) // optionally set debug mode
+// Optionally set debug mode.
+// sprbox.SetDebug(true)
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
@@ -136,10 +146,34 @@ if sprbox.Env() == sprbox.Production {
 }
 
 sprbox.Env().PrintInfo()
-
-sprbox.EnvSubDir("static") // -> "static/<environment>"
 ```
- 
+
+##### Working with directories
+
+Sparebox offer two utility funcs to work with directories.
+
+1. `EnvSubDir()`  
+...pretty much self-explanatory:
+    ```go
+    sprbox.EnvSubDir("static") // -> "static/<environment>" (eg.: "static/staging")
+    ```
+2. `CompiledPath()`  
+If the current build-environment has RunCompiled == true `sprbox.CompiledPath()` returns the path base, so static files can stay side by side with the executable while it is possible to have a different location when the program is launched with `go run`.  
+This allow to manage multiple packages in one project during development, for instance using a config path in the parent dir, side by side with the packages, while having the same config folder side by side with the executable where needed.
+    ```go
+    sprbox.BUILDENV = sprbox.Development.ID()   
+    
+    sprbox.Development.RunCompiled = false   
+    sprbox.CompiledPath("../static_files/config") // -> "../static_files/config"
+      
+    sprbox.Development.RunCompiled = true   
+    sprbox.CompiledPath("../static_files/config") // -> "config"
+    ```
+    A simple usage example is:
+    ```go
+    sprbox.LoadToolBox(&myToolBox, sprbox.CompiledPath("../config"))
+    ```
+    By default only Production and Staging environments have `RunCompiled` true.
 ## Using your package in sprbox
 
 To start using your package in `sprbox` you just need to implement the `configurable` interface:
@@ -276,7 +310,7 @@ func main() {
 	
 	// Setting 'production' build-environment,
 	// so 'pg.production.yml' will override 'pg.yml'.
-	sprbox.BUILDENV = sprbox.Production.String() // -> 'production'
+	sprbox.BUILDENV = sprbox.Production.ID() // -> 'production'
 	
 	var pgConfig PostgresConfig	
 	if err := sprbox.LoadConfig(&pgConfig, "config/pg.yaml"); err != nil {
@@ -315,7 +349,13 @@ Keep in mind that:
 ## Examples
 - [example](example)
 
-## Compatible packages
+To start it run: 
+```sh 
+make example
+```
+ 
+
+## Ready packages
 
 ##### Included:
 - [`common`](common)

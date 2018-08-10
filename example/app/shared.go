@@ -30,13 +30,11 @@ type ToolBox struct {
 	// so it can be loaded also directly inside slices or maps using a single config file.
 	WPS []Workerful
 
-	ToolMissingConfig *Tool
-
 	// Optionally add the 'omit' value so sprbox will skip that field.
 	OmittedTool Tool `sprbox:"omit"`
 }
 
-// App is the app toolbox
+// Shared is the app toolbox, `app.Shared`.
 var Shared ToolBox
 
 func init() {
