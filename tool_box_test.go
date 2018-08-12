@@ -14,13 +14,11 @@ type Tool struct {
 
 // SpareConfig is the 'configurable' interface implementation.
 func (c *Tool) SpareConfig(config []string) error {
-	LoadConfig(c, config...)
-	return nil
+	return LoadConfig(c, config...)
 }
 
 func (c *Tool) SpareConfigBytes(config []byte) error {
-	Unmarshal(config, c)
-	return nil
+	return Unmarshal(config, c)
 }
 
 // ToolError is a struct implementing 'configurable' interface.
@@ -42,26 +40,22 @@ type ConfigurableSlice []Tool
 type ConfigurableSlicePtr []*Tool
 
 func (c *ConfigurableSlice) SpareConfig(config []string) error {
-	LoadConfig(c, config...)
-	return nil
+	return LoadConfig(c, config...)
 }
 
 func (c *ConfigurableSlicePtr) SpareConfig(config []string) error {
-	LoadConfig(c, config...)
-	return nil
+	return LoadConfig(c, config...)
 }
 
 type ConfigurableMap map[string]Tool
 type ConfigurableMapPtr map[string]*Tool
 
 func (c *ConfigurableMap) SpareConfig(config []string) error {
-	LoadConfig(c, config...)
-	return nil
+	return LoadConfig(c, config...)
 }
 
 func (c *ConfigurableMapPtr) SpareConfig(config []string) error {
-	LoadConfig(c, config...)
-	return nil
+	return LoadConfig(c, config...)
 }
 
 type Box struct {
@@ -69,6 +63,10 @@ type Box struct {
 	PTRTool               *Tool
 	ToolNoConfigurable    ToolNoConfigurable
 	PTRToolNoConfigurable *ToolNoConfigurable
+
+	SubBox struct {
+		Tool1 Tool
+	}
 
 	ToolSlice    []Tool
 	ToolSlicePTR []*Tool
@@ -91,6 +89,7 @@ func TestBox(t *testing.T) {
 
 	createJSON(defaultBoxConfig, "Tool.json", t)
 	createTOML(defaultBoxConfig, "PTRTool.toml", t)
+	createYAML(defaultBoxConfig, "SubBox/Tool1.yaml", t)
 
 	ts := []Tool{
 		Tool{"test1"},
@@ -128,6 +127,7 @@ func TestBox(t *testing.T) {
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
+
 	if test.Tool.ConfigPath != defaultBoxConfig.ConfigPath {
 		t.Error("test.Tool.ConfigPath is empty")
 	}

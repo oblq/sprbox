@@ -20,7 +20,6 @@ const (
 // Errors.
 var (
 	errInvalidPointer             = errors.New("<box> parameter should be a struct pointer")
-	errOmit                       = errors.New("omitted")
 	errNoConfigurable             = errors.New(`does not implement the 'configurable' interface: func SpareConfig([]string) error`)
 	errNoConfigurableInCollection = errors.New(`does not implement the 'configurableInCollection' interface: func SpareConfigBytes([]byte) error`)
 	errConfigFileNotFound         = errors.New("config file not found")
@@ -76,7 +75,6 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
 				return err
 			}
-
 			fv.Set(newV.Elem())
 		} else {
 			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
@@ -85,7 +83,8 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 			for i := 0; i < fv.NumField(); i++ {
 				ssf := fv.Type().Field(i)
 				sfv := fv.Field(i)
-				if err := loadField(configPath, &ssf, sfv, "  "); err != nil {
+				subPath := filepath.Join(configPath, sf.Name)
+				if err := loadField(subPath, &ssf, sfv, "  "); err != nil {
 					return err
 				}
 			}
@@ -289,9 +288,7 @@ func printLoadResult(objNameType string, t reflect.Type, err error) {
 	objNameType = fmt.Sprintf("%v (%v)", blue(objNameType), objType)
 	objNameType = fmt.Sprintf("%-50v", objNameType)
 	if err != nil {
-		if err == errOmit {
-			fmt.Printf("%s %s\n", objNameType, err.Error())
-		} else if err == errNoConfigurable ||
+		if err == errNoConfigurable ||
 			err == errNoConfigurableInCollection ||
 			err == errConfigFileNotFound {
 			fmt.Printf("%s %s\n", objNameType, yellow("-> "+err.Error()))

@@ -42,11 +42,12 @@ func createJSON(object interface{}, fileName string, t *testing.T) {
 }
 
 func writeFiles(fileName string, bytes []byte, t *testing.T) {
-	if err := os.MkdirAll(configPath, os.ModePerm); err != nil {
+	filePath := filepath.Join(configPath, fileName)
+
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		t.Error(err)
 	}
 
-	filePath := filepath.Join(configPath, fileName)
 	if err := ioutil.WriteFile(filePath, bytes, os.ModePerm); err != nil {
 		t.Errorf("failed to create config file: %v", err)
 	}
