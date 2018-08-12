@@ -106,7 +106,7 @@ func EnvSubDir(path string) string {
 	return filepath.Join(path, Env().ID())
 }
 
-// CompiledPath() returns the path base if RunCompiled == true
+// CompiledPath returns the path base if RunCompiled == true
 // for the environment in use so that static files can
 // stay side by side with the executable
 // while it is possible to have a different location when the

@@ -21,7 +21,7 @@ type ToolBox struct {
 	MediaProcessing struct {
 		// Optionally pass one or more config file name in the tag,
 		// file extension can be omitted.
-		Pictures services.Service `sprbox:"MPPict1|MPPict2"`
+		Pictures services.Service `sprbox:"Pictures|PicturesOverride"`
 		Videos   services.Service // sprbox will look for ./config/Videos.* here.
 	}
 
