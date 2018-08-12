@@ -3,9 +3,11 @@ package sprbox
 import (
 	"errors"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-var defaultBoxConfig = Tool{"default config path"}
+var defaultToolConfig = Tool{"default config path"}
 
 // Tool is a struct implementing 'configurable' interface.
 type Tool struct {
@@ -87,9 +89,9 @@ type Box struct {
 func TestBox(t *testing.T) {
 	SetDebug(true)
 
-	createJSON(defaultBoxConfig, "Tool.json", t)
-	createTOML(defaultBoxConfig, "PTRTool.toml", t)
-	createYAML(defaultBoxConfig, "SubBox/Tool1.yaml", t)
+	createJSON(defaultToolConfig, "Tool.json", t)
+	createTOML(defaultToolConfig, "PTRTool.toml", t)
+	createYAML(defaultToolConfig, "SubBox/Tool1.yaml", t)
 
 	ts := []Tool{
 		Tool{"test1"},
@@ -128,37 +130,19 @@ func TestBox(t *testing.T) {
 		t.Error(err)
 	}
 
-	if test.Tool.ConfigPath != defaultBoxConfig.ConfigPath {
-		t.Error("test.Tool.ConfigPath is empty")
-	}
-	if len(test.PTRTool.ConfigPath) == 0 {
-		t.Error("test.PTRTool.ConfigPath is empty")
-	}
-	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
-		t.Error("test.ToolNoConfigurable.ConfigPath:", test.ToolNoConfigurable.ConfigPath)
-	}
-	if len(test.ToolNoConfigurable.ConfigPath) > 0 {
-		t.Error("test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
-	}
+	assert.Equal(t, defaultToolConfig.ConfigPath, test.SubBox.Tool1.ConfigPath, "subBox not correctly loaded")
+	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool.ConfigPath, "test.Tool.ConfigPath is empty")
+	assert.NotEqual(t, 0, len(test.PTRTool.ConfigPath), "test.PTRTool.ConfigPath is empty")
+	assert.Equal(t, 0, len(test.ToolNoConfigurable.ConfigPath), "test.ToolNoConfigurable.ConfigPath:", test.ToolNoConfigurable.ConfigPath)
+	assert.Equal(t, 0, len(test.PTRToolNoConfigurable.ConfigPath), "test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 
-	if len(test.ToolSlice[0].ConfigPath) == 0 {
-		t.Error("test.ToolSlice.ConfigPath is empty")
-	}
-	if len(test.ToolSlicePTR[0].ConfigPath) == 0 {
-		t.Error("test.ToolSlicePTR.ConfigPath is empty")
-	}
-	if len((*test.PTRToolSlice)[0].ConfigPath) == 0 {
-		t.Error("test.PTRToolSlice.ConfigPath is empty")
-	}
-	if len(test.ToolMap["test1"].ConfigPath) == 0 {
-		t.Error("test.ToolMap.ConfigPath is empty")
-	}
-	if len(test.ToolMapPTR["test1"].ConfigPath) == 0 {
-		t.Error("test.ToolMapPTR.ConfigPath is empty")
-	}
-	if len((*test.PTRToolMap)["test1"].ConfigPath) == 0 {
-		t.Error("test.PTRToolMap.ConfigPath is empty")
-	}
+	assert.NotEqual(t, 0, len(test.ToolSlice[0].ConfigPath) == 0, "test.ToolSlice.ConfigPath is empty")
+	assert.NotEqual(t, 0, len(test.ToolSlicePTR[0].ConfigPath), "test.ToolSlicePTR.ConfigPath is empty")
+	assert.NotEqual(t, 0, len((*test.PTRToolSlice)[0].ConfigPath), "test.PTRToolSlice.ConfigPath is empty")
+	assert.NotEqual(t, 0, len(test.ToolMap["test1"].ConfigPath), "test.ToolMap.ConfigPath is empty")
+	assert.NotEqual(t, 0, len(test.ToolMapPTR["test1"].ConfigPath), "test.ToolMapPTR.ConfigPath is empty")
+	assert.NotEqual(t, 0, len((*test.PTRToolMap)["test1"].ConfigPath), "test.PTRToolMap.ConfigPath is empty")
+
 	SetDebug(false)
 }
 
@@ -167,7 +151,7 @@ type BoxError struct {
 }
 
 func TestBoxError(t *testing.T) {
-	createYAML(defaultBoxConfig, "ToolError.yaml", t)
+	createYAML(defaultToolConfig, "ToolError.yaml", t)
 	defer removeConfigFiles(t)
 
 	var test BoxError
@@ -181,7 +165,7 @@ type PTRToolError struct {
 }
 
 func TestPTRToolError(t *testing.T) {
-	createYAML(defaultBoxConfig, "PTRToolError.yml", t)
+	createYAML(defaultToolConfig, "PTRToolError.yml", t)
 	defer removeConfigFiles(t)
 
 	var test PTRToolError
@@ -210,20 +194,16 @@ type BoxNil struct {
 func TestNilBox(t *testing.T) {
 	SetColoredLogs(false)
 
-	createJSON(defaultBoxConfig, "Tool1.json", t)
-	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	createJSON(defaultToolConfig, "Tool1.json", t)
+	createTOML(defaultToolConfig, "Tool2.toml", t)
 	defer removeConfigFiles(t)
 
 	var test1 BoxNil
 	if err := LoadToolBox(&test1, configPath); err != nil {
 		t.Error(err)
 	}
-	if len(test1.Tool1.ConfigPath) == 0 {
-		t.Error("test1.Tool1.ConfigPath:", test1.Tool1.ConfigPath)
-	}
-	if len(test1.Tool2.ConfigPath) == 0 {
-		t.Error("test1.Tool2.ConfigPath:", test1.Tool2.ConfigPath)
-	}
+	assert.NotEqual(t, 0, len(test1.Tool1.ConfigPath), "test1.Tool1.ConfigPath:", test1.Tool1.ConfigPath)
+	assert.NotEqual(t, 0, len(test1.Tool2.ConfigPath), "test1.Tool2.ConfigPath:", test1.Tool2.ConfigPath)
 
 	var test2 *BoxNil
 	if err := LoadToolBox(test2, configPath); err != nil {
@@ -236,12 +216,8 @@ func TestNilBox(t *testing.T) {
 	if err := LoadToolBox(test3, configPath); err != nil {
 		t.Error(err)
 	}
-	if len(test3.Tool1.ConfigPath) == 0 {
-		t.Error("test3.Tool1.ConfigPath:", test3.Tool1.ConfigPath)
-	}
-	if len(test3.Tool2.ConfigPath) == 0 {
-		t.Error("test3.Tool2.ConfigPath:", test3.Tool2.ConfigPath)
-	}
+	assert.NotEqual(t, 0, len(test3.Tool1.ConfigPath), "test3.Tool1.ConfigPath:", test3.Tool1.ConfigPath)
+	assert.NotEqual(t, 0, len(test3.Tool2.ConfigPath), "test3.Tool2.ConfigPath:", test3.Tool2.ConfigPath)
 
 	SetColoredLogs(true)
 }
@@ -250,31 +226,26 @@ type BoxConfigFiles struct {
 	Tool1 Tool
 	Tool2 Tool
 	Tool3 *Tool
-	Tool4 Tool
 }
 
 func TestConfigFiles(t *testing.T) {
-	createYAML(defaultBoxConfig, "Tool1.yml", t)
-	createJSON(defaultBoxConfig, "Tool3.json", t)
-	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	createYAML(defaultToolConfig, "Tool1.yml", t)
+	createJSON(defaultToolConfig, "Tool3.json", t)
+	createTOML(defaultToolConfig, "Tool2.toml", t)
 	defer removeConfigFiles(t)
 
 	var test BoxConfigFiles
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	if len(test.Tool1.ConfigPath) == 0 {
-		t.Error("test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
-	}
-	if len(test.Tool2.ConfigPath) == 0 {
-		t.Error("test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
-	}
-	if len(test.Tool3.ConfigPath) == 0 {
-		t.Error("test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
-	}
-	if len(test.Tool4.ConfigPath) > 0 {
-		t.Error("test.Tool4.ConfigPath:", test.Tool4.ConfigPath)
-	}
+	assert.NotEqual(t, 0, len(test.Tool1.ConfigPath), "test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
+	assert.NotEqual(t, 0, len(test.Tool2.ConfigPath), "test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
+	assert.NotEqual(t, 0, len(test.Tool3.ConfigPath), "test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
+}
+
+func TestConfigFileNotFound(t *testing.T) {
+	var test BoxConfigFiles
+	assert.Error(t, errConfigFileNotFound, LoadToolBox(&test, configPath), "enexistent config file does not return error")
 }
 
 type BoxTags struct {
@@ -290,42 +261,28 @@ type BoxTags struct {
 func TestBoxTags(t *testing.T) {
 	BUILDENV = "dev"
 
-	devConfig := defaultBoxConfig
+	devConfig := defaultToolConfig
 	devpath := "dev"
 	devConfig.ConfigPath = devpath
 
 	createYAML(devConfig, "Tool7.development.yml", t)
-	createYAML(defaultBoxConfig, "Tool1.yml", t)
-	createYAML(defaultBoxConfig, "test.yml", t)
+	createYAML(defaultToolConfig, "Tool1.yml", t)
+	createYAML(defaultToolConfig, "test.yml", t)
 	createJSON(devConfig, "tool8.development.json", t)
-	createTOML(defaultBoxConfig, "Tool2.toml", t)
+	createTOML(defaultToolConfig, "Tool2.toml", t)
 	defer removeConfigFiles(t)
 
 	var test BoxTags
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	if test.Tool1.ConfigPath != defaultBoxConfig.ConfigPath {
-		t.Error("test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
-	}
-	if test.Tool2.ConfigPath == defaultBoxConfig.ConfigPath {
-		t.Error("test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
-	}
-	if test.Tool3.ConfigPath != defaultBoxConfig.ConfigPath {
-		t.Error("test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
-	}
-	if len(test.Tool5.ConfigPath) > 0 {
-		t.Error("test.Tool5.ConfigPath:", test.Tool5.ConfigPath)
-	}
-	if test.Tool6.ConfigPath == defaultBoxConfig.ConfigPath {
-		t.Error("test.Tool6 not nil", test.Tool6)
-	}
-	if test.Tool7.ConfigPath != devpath {
-		t.Error("test.Tool7.ConfigPath:", test.Tool7.ConfigPath)
-	}
-	if test.Tool8.ConfigPath != devpath {
-		t.Error("test.Tool8.ConfigPath:", test.Tool8.ConfigPath)
-	}
+	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool1.ConfigPath, "test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
+	assert.NotEqual(t, defaultToolConfig.ConfigPath, test.Tool2.ConfigPath, "test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
+	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool3.ConfigPath, "test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
+	assert.Equal(t, 0, len(test.Tool5.ConfigPath), "test.Tool5.ConfigPath:", test.Tool5.ConfigPath)
+	assert.NotEqual(t, defaultToolConfig.ConfigPath, test.Tool6.ConfigPath, "test.Tool6.ConfigPath:", test.Tool6.ConfigPath)
+	assert.Equal(t, devpath, test.Tool7.ConfigPath, "test.Tool7.ConfigPath:", test.Tool7.ConfigPath)
+	assert.Equal(t, devpath, test.Tool8.ConfigPath, "test.Tool8.ConfigPath:", test.Tool8.ConfigPath)
 }
 
 type BoxAfterConfig struct {
@@ -334,7 +291,7 @@ type BoxAfterConfig struct {
 }
 
 func TestBoxAfterConfig(t *testing.T) {
-	createYAML(defaultBoxConfig, "Tool1.yml", t)
+	createYAML(defaultToolConfig, "Tool1.yml", t)
 	defer removeConfigFiles(t)
 
 	tString := "must remain the same"
@@ -343,10 +300,7 @@ func TestBoxAfterConfig(t *testing.T) {
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	if len(test.Tool1.ConfigPath) == 0 {
-		t.Error("test1.ConfigPath:", test.Tool1.ConfigPath)
-	}
-	if test.Tool2.ConfigPath != tString {
-		t.Error("test2.ConfigPath:", test.Tool2.ConfigPath)
-	}
+
+	assert.NotEqual(t, 0, len(test.Tool1.ConfigPath), "test1.ConfigPath:", test.Tool1.ConfigPath)
+	assert.Equal(t, tString, test.Tool2.ConfigPath, "test2.ConfigPath:", test.Tool2.ConfigPath)
 }

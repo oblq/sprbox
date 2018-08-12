@@ -1,19 +1,18 @@
 package sprbox
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestNewRepository(t *testing.T) {
 	repo := NewRepository("./")
 	repo.UpdateInfo()
 	repo.PrintInfo()
-	if repo.Error != nil {
-		t.Fail()
-	}
+	assert.NoError(t, repo.Error)
 }
 
 func TestNewWrongRepository(t *testing.T) {
-	repo := NewRepository("../")
-	if repo.Error == nil {
-		t.Fail()
-	}
+	assert.Error(t, NewRepository("../").Error)
 }

@@ -55,7 +55,11 @@ type ToolBox struct {
 		// sprbox will always try to find the file named
 		// like the struct field first (Pictures.*).
 		// File extension can be omitted.
-		Pictures services.Service `sprbox:"MPPict1|MPPict2"`
+		//
+		// Configurable elements inside an embedded struct, like this,
+		// will search for config files in a sub-directory
+		// eg.: "./config/MediaProcessing/Pics.*", not "./config/Pics.*"
+		Pictures services.Service `sprbox:"Pics|PicsOverride"`
 		Videos   services.Service
 	}
 
