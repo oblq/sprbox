@@ -69,17 +69,14 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 			break
 		}
 
-		newV := reflect.New(fv.Type())
+		fv.Set(reflect.New(fv.Type()).Elem())
 
-		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
-			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+		if _, isConfigurable := fv.Addr().Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, fv.Addr(), indent); err != nil {
 				return err
 			}
-			fv.Set(newV.Elem())
 		} else {
 			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
-			fv.Set(newV.Elem())
-			// recursive
 			for i := 0; i < fv.NumField(); i++ {
 				ssf := fv.Type().Field(i)
 				sfv := fv.Field(i)
@@ -97,13 +94,12 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 			break
 		}
 
-		newV := reflect.New(fv.Type())
+		fv.Set(reflect.New(fv.Type()).Elem())
 
-		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
-			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+		if _, isConfigurable := fv.Addr().Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, fv.Addr(), indent); err != nil {
 				return err
 			}
-			fv.Set(newV.Elem())
 		} else {
 			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
 
@@ -117,8 +113,6 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 				return err
 			}
 
-			newV := reflect.New(fv.Type()).Elem()
-
 			for i := 0; i < len(config); i++ {
 				elemType := fv.Type().Elem()
 				var elem reflect.Value
@@ -131,7 +125,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 						return err
 					}
 					printLoadResult("  "+sfName, elem.Type(), nil)
-					newV.Set(reflect.Append(newV, elem))
+					fv.Set(reflect.Append(fv, elem))
 
 				case reflect.Struct:
 					elem = reflect.New(elemType)
@@ -139,11 +133,11 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 						return err
 					}
 					printLoadResult("  "+sfName, elem.Elem().Type(), nil)
-					newV.Set(reflect.Append(newV, elem.Elem()))
+					fv.Set(reflect.Append(fv, elem.Elem()))
 				}
 			}
 
-			fv.Set(newV)
+			//fv.Set(newV)
 			return nil
 		}
 
@@ -153,13 +147,12 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 			break
 		}
 
-		newV := reflect.New(fv.Type())
+		fv.Set(reflect.New(fv.Type()).Elem())
 
-		if _, isConfigurable := newV.Interface().(configurable); isConfigurable {
-			if err := configure(configPath, configFiles, sf, &newV, indent); err != nil {
+		if _, isConfigurable := fv.Addr().Interface().(configurable); isConfigurable {
+			if err := configure(configPath, configFiles, sf, fv.Addr(), indent); err != nil {
 				return err
 			}
-			fv.Set(newV.Elem())
 		} else {
 			printLoadResult(sf.Name, sf.Type, errNoConfigurable)
 
@@ -173,7 +166,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 				return err
 			}
 
-			newV := reflect.MakeMapWithSize(fv.Type(), len(config))
+			fv.Set(reflect.MakeMapWithSize(fv.Type(), len(config)))
 
 			for key, conf := range config {
 				kv := reflect.ValueOf(key)
@@ -189,7 +182,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 						return err
 					}
 					printLoadResult("  "+sfName, elem.Type(), nil)
-					newV.SetMapIndex(kv, elem)
+					fv.SetMapIndex(kv, elem)
 
 				case reflect.Struct:
 					elem = reflect.New(elemType)
@@ -197,11 +190,10 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, ind
 						return err
 					}
 					printLoadResult("  "+sfName, elem.Elem().Type(), nil)
-					newV.SetMapIndex(kv, elem.Elem())
+					fv.SetMapIndex(kv, elem.Elem())
 				}
 			}
 
-			fv.Set(newV)
 			return nil
 		}
 
@@ -240,9 +232,25 @@ func parseTags(configFiles *[]string, f *reflect.StructField) (omit bool) {
 }
 
 // configure will call the 'configurable' interface on the passed field struct pointer.
-func configure(configPath string, configFiles []string, f *reflect.StructField, v *reflect.Value, indent string) error {
+func configure(configPath string, configFiles []string, f *reflect.StructField, v reflect.Value, indent string) error {
 	for i, file := range configFiles {
 		configFiles[i] = filepath.Join(configPath, file)
+	}
+
+	// init anonymous fields
+	indirect := reflect.Indirect(v)
+	if indirect.Kind() == reflect.Struct {
+		for i := 0; i < indirect.NumField(); i++ {
+			ssf := indirect.Type().Field(i)
+			sfv := indirect.Field(i)
+			if ssf.Anonymous {
+				if sfv.Kind() == reflect.Ptr {
+					if sfv.IsNil() {
+						sfv.Set(reflect.New(sfv.Type().Elem()))
+					}
+				}
+			}
+		}
 	}
 
 	if err := v.Interface().(configurable).SpareConfig(configFiles); err != nil {
@@ -259,6 +267,22 @@ func configureElem(elem reflect.Value, config interface{}, sfName string) (err e
 	if _, isConfigurable := elem.Interface().(configurableInCollection); !isConfigurable {
 		printLoadResult(sfName, elem.Type(), errNoConfigurableInCollection)
 		return nil
+	}
+
+	// init anonymous fields
+	indirect := reflect.Indirect(elem)
+	if indirect.Kind() == reflect.Struct {
+		for i := 0; i < indirect.NumField(); i++ {
+			ssf := indirect.Type().Field(i)
+			sfv := indirect.Field(i)
+			if ssf.Anonymous {
+				if sfv.Kind() == reflect.Ptr {
+					if sfv.IsNil() {
+						sfv.Set(reflect.New(sfv.Type().Elem()))
+					}
+				}
+			}
+		}
 	}
 
 	var bytes []byte
