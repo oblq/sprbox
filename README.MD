@@ -90,6 +90,8 @@ sprbox.PrintInfo()
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
+NOTE: tool's nil anonymous struct fields will be automatically initialized before to call the [configurable](#using-your-package-in-sprbox) interface.
+
 ![loading](start.png)
 
 ## The build environment
@@ -368,7 +370,7 @@ make example
 ##### External:
 - [`Workerful`](https://github.com/oblq/workerful) Full-featured worker-pool implementation.
 
-## Vendor packages
+## Vendored packages
 
 - [`gopkg.in/yaml.v2`](https://github.com/go-yaml/yaml)  
 - [`github.com/BurntSushi/toml`](https://github.com/BurntSushi/toml)
