@@ -60,6 +60,15 @@ func (c *ConfigurableMapPtr) SpareConfig(config []string) error {
 	return LoadConfig(c, config...)
 }
 
+type SubBoxConfigurable struct {
+	ConfigPath string
+	Tool       Tool `sprbox:"SubBox/Tool1"`
+}
+
+func (c *SubBoxConfigurable) SpareConfig(config []string) error {
+	return LoadConfig(c, config...)
+}
+
 type Box struct {
 	Tool                  Tool
 	PTRTool               *Tool
@@ -67,8 +76,10 @@ type Box struct {
 	PTRToolNoConfigurable *ToolNoConfigurable
 
 	SubBox struct {
-		Tool1 Tool
+		Tool1 Tool `sprbox:"SubBox/Tool1"`
 	}
+
+	SubBoxConfigurable SubBoxConfigurable `sprbox:"Tool"`
 
 	ToolSlice    []Tool
 	ToolSlicePTR []*Tool
@@ -136,7 +147,7 @@ func TestBox(t *testing.T) {
 	assert.Equal(t, 0, len(test.ToolNoConfigurable.ConfigPath), "test.ToolNoConfigurable.ConfigPath:", test.ToolNoConfigurable.ConfigPath)
 	assert.Equal(t, 0, len(test.PTRToolNoConfigurable.ConfigPath), "test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
 
-	assert.NotEqual(t, 0, len(test.ToolSlice[0].ConfigPath) == 0, "test.ToolSlice.ConfigPath is empty")
+	assert.NotEqual(t, 0, len(test.ToolSlice[0].ConfigPath), "test.ToolSlice.ConfigPath is empty")
 	assert.NotEqual(t, 0, len(test.ToolSlicePTR[0].ConfigPath), "test.ToolSlicePTR.ConfigPath is empty")
 	assert.NotEqual(t, 0, len((*test.PTRToolSlice)[0].ConfigPath), "test.PTRToolSlice.ConfigPath is empty")
 	assert.NotEqual(t, 0, len(test.ToolMap["test1"].ConfigPath), "test.ToolMap.ConfigPath is empty")
@@ -245,7 +256,7 @@ func TestConfigFiles(t *testing.T) {
 
 func TestConfigFileNotFound(t *testing.T) {
 	var test BoxConfigFiles
-	assert.Error(t, errConfigFileNotFound, LoadToolBox(&test, configPath), "enexistent config file does not return error")
+	assert.Error(t, LoadToolBox(&test, configPath), "unexistent config file does not return error")
 }
 
 type BoxTags struct {

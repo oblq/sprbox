@@ -15,19 +15,19 @@ import (
 // the `configurable` interface to it.
 
 type Workerful struct {
-	workerful.Workerful
+	*workerful.Workerful
 }
 
 func (wp *Workerful) SpareConfig(configFiles []string) (err error) {
 	var cfg workerful.Config
 	err = sprbox.LoadConfig(&cfg, configFiles...)
-	wp.Workerful = *workerful.New("", &cfg)
+	wp.Workerful = workerful.New("", &cfg)
 	return
 }
 
 func (wp *Workerful) SpareConfigBytes(configBytes []byte) (err error) {
 	var cfg workerful.Config
 	err = sprbox.Unmarshal(configBytes, &cfg)
-	wp.Workerful = *workerful.New("", &cfg)
+	wp.Workerful = workerful.New("", &cfg)
 	return
 }

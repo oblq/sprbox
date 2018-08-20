@@ -8,6 +8,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
+	"unsafe"
+
+	"encoding/json"
+	"net/http"
 
 	"gopkg.in/yaml.v2"
 )
@@ -38,6 +43,19 @@ var (
 	fileSearchCaseSensitive = true
 )
 
+func init() {
+	//coloredLogs = isTerminal(os.Stdout.Fd())
+}
+
+const ioctlReadTermios = syscall.TIOCGETA
+
+// isTerminal return true if the file descriptor is terminal.
+func isTerminal(fd uintptr) bool {
+	var termios syscall.Termios
+	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, ioctlReadTermios, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	return err == 0
+}
+
 // SetDebug will print detailed logs in console.
 func SetDebug(enabled bool) {
 	debug = enabled
@@ -57,11 +75,34 @@ func verbosePrintf(format string, args ...interface{}) {
 }
 
 func dump(v interface{}) string {
-	d, err := yaml.Marshal(v)
+	// To marshal directly with yaml produce a panic with unexported fields
+
+	jd, err := json.Marshal(v)
 	if err != nil {
-		fmt.Println(err)
+		//fmt.Printf("dump err on %+v: %v\n", v, err)
+		return fmt.Sprintf("%+v", v)
 	}
-	return string(d)
+
+	// Convert the JSON to an object.
+	var jsonObj interface{}
+	// We are using yaml.Unmarshal here (instead of json.Unmarshal) because the
+	// Go JSON library doesn't try to pick the right number type (int, float,
+	// etc.) when unmarshalling to interface{}, it just picks float64
+	// universally. go-yaml does go through the effort of picking the right
+	// number type, so we can preserve number type throughout this process.
+	err = yaml.Unmarshal(jd, &jsonObj)
+	if err != nil {
+		//fmt.Printf("dump err on %+v: %v\n", v, err)
+		return fmt.Sprintf("%+v", v)
+	}
+
+	// Marshal this object into YAML.
+	yd, err := yaml.Marshal(jsonObj)
+	if err != nil {
+		//fmt.Printf("dump err on %+v: %v\n", v, err)
+		return fmt.Sprintf("%+v", v)
+	}
+	return string(yd)
 	//b, _ := json.MarshalIndent(v, "", "  ")
 	//return string(b)+"\n"
 }
@@ -77,6 +118,10 @@ func PrintInfo() {
 
 	Env().PrintInfo()
 	VCS.PrintInfo()
+}
+
+func GetInfo(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "\n%s%s\n%s\n", banner, Env().Info(), VCS.Info())
 }
 
 // SetColoredLogs toggle colors in console.

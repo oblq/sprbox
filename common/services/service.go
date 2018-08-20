@@ -1,10 +1,11 @@
 package services
 
 import (
-	"bytes"
-	"errors"
 	"fmt"
 	"net/url"
+
+	"bytes"
+	"errors"
 	"text/template"
 
 	"github.com/oblq/sprbox"
@@ -27,7 +28,7 @@ type Service struct {
 
 	// Proxy will be automatically populated inside ServicesMap struct.
 	// Can be set manually in the config file otherwise.
-	Proxy *Service
+	Proxy *Service `sprbox:"omit"`
 
 	// IPs contains the ip list of the machines running this service
 	// in the format <public:private> (e.g. 192.168.1.10: 127.0.0.1 locally).
@@ -69,7 +70,7 @@ func (s *Service) SpareConfig(configFiles []string) (err error) {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
 		}
-		return s.parseBasePath()
+		return nil //s.parseBasePath()
 	}
 	return
 }
@@ -89,7 +90,7 @@ func (s *Service) SpareConfigBytes(configBytes []byte) (err error) {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
 		}
-		return s.parseBasePath()
+		return nil //s.parseBasePath()
 	}
 	return
 }
@@ -134,9 +135,10 @@ func (s *Service) Host() string {
 	return ""
 }
 
-// PortOptional returns the service port for URL.
-// If service.Port == ':443' or ':80' returns an empty string.
-func (s *Service) portOptional() (port string) {
+// PortForURLString returns the service port for URL.
+// If service.Port == 443 or 80 returns an empty string,
+// otherwise returns ":<Port>".
+func (s *Service) PortForURLString() (port string) {
 	if s.Port != 443 && s.Port != 80 {
 		port = fmt.Sprintf(":%d", s.Port)
 	}
@@ -148,7 +150,7 @@ func (s *Service) portOptional() (port string) {
 func (s *Service) URL() *url.URL {
 	nURL := &url.URL{}
 	nURL.Scheme = s.scheme()
-	nURL.Host = s.Host() + s.portOptional()
+	nURL.Host = s.Host() + s.PortForURLString()
 	nURL.Path = s.Basepath
 	return nURL
 }
@@ -159,7 +161,7 @@ func (s *Service) ProxyURL() *url.URL {
 	if s.Proxy != nil {
 		nURL := &url.URL{}
 		nURL.Scheme = s.Proxy.scheme()
-		nURL.Host += s.Proxy.Host() + s.Proxy.portOptional()
+		nURL.Host += s.Proxy.Host() + s.Proxy.PortForURLString()
 		nURL.Path = s.Basepath
 		return nURL
 	} else {
@@ -176,7 +178,7 @@ func (s *Service) URLAlternatives() ([]url.URL, []string) {
 	for i := 1; i < len(s.Hosts); i++ {
 		nURL := url.URL{}
 		nURL.Scheme = s.scheme()
-		nURL.Host = s.Hosts[i] + s.portOptional()
+		nURL.Host = s.Hosts[i] + s.PortForURLString()
 		nURL.Path = s.Basepath
 
 		urls = append(urls, nURL)

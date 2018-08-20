@@ -92,7 +92,7 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 	}
 
 	if len(foundFiles) > 0 {
-		debugPrintf("\n%s %s", strings.Join(foundFiles, green(" <- ")), green("="))
+		debugPrintf("\n%s %s\n", strings.Join(foundFiles, green(" <- ")), green("="))
 	} else {
 		debugPrintf("\n")
 	}

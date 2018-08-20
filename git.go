@@ -53,6 +53,11 @@ func (r *Repository) git(params ...string) string {
 	return out
 }
 
+// Info return Git repository info.
+func (r *Repository) Info() string {
+	return fmt.Sprintf("Git Branch: %s\nGit Commit: %s\nGit Tag: %s\nGit Build: %s\n", r.BranchName, r.Commit, r.Tag, r.Build)
+}
+
 // PrintInfo print git data in console.
 func (r *Repository) PrintInfo() {
 	if r == nil {

@@ -1,6 +1,7 @@
 package sprbox
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"github.com/BurntSushi/toml"
 	"gopkg.in/yaml.v2"
@@ -70,7 +72,8 @@ func parseConfigTags(elem interface{}, indent string) error {
 
 			tag := ft.Tag.Get(sftKey)
 			tagFields := strings.Split(tag, ",")
-			verbosePrintf("\n%sProcessing FIELD: %s %s = %+v, tags: %s\n", indent, ft.Name, ft.Type.String(), fv.Interface(), tag)
+			verbosePrintf("\n%sProcessing FIELD: %s %s = %+v, tags: %s\n",
+				indent, ft.Name, ft.Type.String(), fv.Interface(), tag)
 			for _, flag := range tagFields {
 
 				kv := strings.Split(flag, "=")
@@ -78,7 +81,8 @@ func parseConfigTags(elem interface{}, indent string) error {
 				if kv[0] == sftEnv {
 					if len(kv) == 2 {
 						if value := os.Getenv(kv[1]); len(value) > 0 {
-							debugPrintf("Loading configuration for struct `%v`'s field `%v` from env %v...\n", elemType.Name(), ft.Name, kv[1])
+							debugPrintf("Loading configuration for struct `%v`'s field `%v` from env %v...\n",
+								elemType.Name(), ft.Name, kv[1])
 							if err := yaml.Unmarshal([]byte(value), fv.Addr().Interface()); err != nil {
 								return err
 							}
@@ -127,25 +131,83 @@ func parseConfigTags(elem interface{}, indent string) error {
 	return nil
 }
 
+// parseTemplateFile parse all text/template placeholders
+// (eg.: {{.Key}}) in config files.
+func parseTemplateBytes(file []byte, config interface{}) error {
+	var buf bytes.Buffer
+	var tpl *template.Template
+	var err error
+
+	if tpl, err = template.New("tpl").Parse(string(file)); err != nil {
+		return err
+	}
+
+	if err = tpl.Execute(&buf, config); err != nil {
+		return err
+	}
+
+	switch {
+	case unmarshalJSON(buf.Bytes(), config, "") == nil:
+		return nil
+	case unmarshalYAML(buf.Bytes(), config, "") == nil:
+		return nil
+	case unmarshalTOML(buf.Bytes(), config, "") == nil:
+		return nil
+	default:
+		return fmt.Errorf("the provided data is incompatible with an interface of type %T:\n%s",
+			config, strings.TrimSuffix(string(file), "\n"))
+	}
+}
+
+// parseTemplateFile parse all text/template placeholders
+// (eg.: {{.Key}}) in config files.
+func parseTemplateFile(file string, config interface{}) error {
+	var buf bytes.Buffer
+	var tpl *template.Template
+	var err error
+
+	if tpl, err = template.ParseFiles(file); err != nil {
+		return err
+	}
+	if err = tpl.Execute(&buf, config); err != nil {
+		return err
+	}
+
+	ext := filepath.Ext(file)
+
+	switch {
+	case regexp.MustCompile(regexYAML).MatchString(ext):
+		return unmarshalYAML(buf.Bytes(), config, file)
+	case regexp.MustCompile(regexTOML).MatchString(ext):
+		return unmarshalTOML(buf.Bytes(), config, file)
+	case regexp.MustCompile(regexJSON).MatchString(ext):
+		return unmarshalJSON(buf.Bytes(), config, file)
+	default:
+		return fmt.Errorf("unknown data format, can't unmarshal file: '%s'", file)
+	}
+}
+
 // Unmarshal will unmarshal []byte to interface
 // for yaml, toml and json data formats.
 //
 // Will also parse struct flags.
-func Unmarshal(in []byte, out interface{}) (err error) {
-	if err = unmarshalJSON(in, out, ""); err == nil {
-		return parseConfigTags(out, "")
+func Unmarshal(data []byte, config interface{}) (err error) {
+	switch {
+	case unmarshalJSON(data, config, "") == nil:
+		break
+	case unmarshalYAML(data, config, "") == nil:
+		break
+	case unmarshalTOML(data, config, "") == nil:
+		break
+	default:
+		return fmt.Errorf("the provided data is incompatible with an interface of type %T:\n%s",
+			config, strings.TrimSuffix(string(data), "\n"))
 	}
 
-	if err = unmarshalYAML(in, out, ""); err == nil {
-		return parseConfigTags(out, "")
+	if err = parseTemplateBytes(data, config); err != nil {
+		return err
 	}
-
-	if err = unmarshalTOML(in, out, ""); err == nil {
-		return parseConfigTags(out, "")
-	}
-
-	return fmt.Errorf("the provided data is incompatible with an interface of type %T:\n%s",
-		out, strings.TrimSuffix(string(in), "\n"))
+	return parseConfigTags(config, "")
 }
 
 // LoadConfig will unmarshal all the matched
@@ -183,8 +245,14 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 		if err != nil {
 			return err
 		}
+
+		fmt.Printf("Config -> %#v\n", config)
+
+		if err = parseTemplateFile(file, config); err != nil {
+			return err
+		}
 	}
 
-	defer debugPrintf("\n%s\n", green(dump(config)))
+	defer debugPrintf("%s\n", green(dump(config)))
 	return parseConfigTags(config, "")
 }

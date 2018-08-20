@@ -90,7 +90,7 @@ sprbox.PrintInfo()
 sprbox.LoadToolBox(&ToolBox, "./config")
 ```
 
-NOTE: tool's nil anonymous struct fields will be automatically initialized before to call the [configurable](#using-your-package-in-sprbox) interface.
+NOTE: tool's exported pointer fields will be automatically initialized before to call the [configurable](#using-your-package-in-sprbox) interface.
 
 ![loading](start.png)
 
