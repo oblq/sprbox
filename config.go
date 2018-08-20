@@ -133,7 +133,7 @@ func parseConfigTags(elem interface{}, indent string) error {
 
 // parseTemplateFile parse all text/template placeholders
 // (eg.: {{.Key}}) in config files.
-func parseTemplateBytes(file []byte, config interface{}) error {
+func parseTemplate(file []byte, config interface{}) error {
 	var buf bytes.Buffer
 	var tpl *template.Template
 	var err error
@@ -204,7 +204,7 @@ func Unmarshal(data []byte, config interface{}) (err error) {
 			config, strings.TrimSuffix(string(data), "\n"))
 	}
 
-	if err = parseTemplateBytes(data, config); err != nil {
+	if err = parseTemplate(data, config); err != nil {
 		return err
 	}
 	return parseConfigTags(config, "")
@@ -246,11 +246,14 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 			return err
 		}
 
-		fmt.Printf("Config -> %#v\n", config)
+	}
 
-		if err = parseTemplateFile(file, config); err != nil {
-			return err
-		}
+	configB, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+	if err = parseTemplate(configB, config); err != nil {
+		return err
 	}
 
 	defer debugPrintf("%s\n", green(dump(config)))

@@ -53,9 +53,9 @@ func (s *ServicesMap) parseServices() error {
 		service.Proxy, _ = (*s)[service.ProxyService]
 
 		// sprbox template parsing works only on struct, doing it manually
-		if err := service.parseBasePath(); err != nil {
-			return err
-		}
+		//if err := service.parseBasePath(); err != nil {
+		//	return err
+		//}
 	}
 	return nil
 }

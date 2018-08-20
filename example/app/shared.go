@@ -1,9 +1,6 @@
 package app
 
 import (
-	"fmt"
-
-	"bitbucket.org/CVING/frankenstein/app/components/dbs/postgres"
 	"github.com/oblq/sprbox"
 	"github.com/oblq/sprbox/common/services"
 	"github.com/oblq/workerful"
@@ -13,8 +10,6 @@ import (
 // It contains pluggable libraries, implementing the
 // 'configurable' interface: `func SpareConfig([]byte) error`.
 type ToolBox struct {
-	Postgres postgres.Postgres
-
 	// By default sprbox will look for a file named like the
 	// struct field name (Services.*, case sensitive).
 	Services services.ServicesMap
@@ -24,20 +19,20 @@ type ToolBox struct {
 	// Recursion only stop when no more embedded elements are found
 	// or when a 'configurable' element is found instead.
 	// 'configurable' elements will not be traversed.
-	//MediaProcessing struct {
-	//	// Optionally pass one or more config file name in the tag,
-	//	// file extension can be omitted.
-	//	Pictures services.Service `sprbox:"MediaProcessing/Pictures|MediaProcessing/PicturesOverride"`
-	//	Videos   services.Service `sprbox:"MediaProcessing/Videos"`
-	//}
+	MediaProcessing struct {
+		// Optionally pass one or more config file name in the tag,
+		// file extension can be omitted.
+		Pictures services.Service `sprbox:"MediaProcessing/Pictures|MediaProcessing/PicturesOverride"`
+		Videos   services.Service `sprbox:"MediaProcessing/Videos"`
+	}
 
 	WP workerful.Workerful
 	// Workerful implement the 'configurableInCollections' interface,
 	// so it can be loaded also directly inside slices or maps using a single config file.
-	//WPS []Workerful
+	WPS []Workerful
 
 	// Optionally add the 'omit' value so sprbox will skip that field.
-	//OmittedTool Tool `sprbox:"omit"`
+	OmittedTool Tool `sprbox:"omit"`
 }
 
 // Shared is the app toolbox, `app.Shared`.
@@ -60,6 +55,4 @@ func init() {
 	// load toolbox: ---------------------------------------------------------------------------------------------------
 
 	sprbox.LoadToolBox(&Shared, "./config")
-
-	fmt.Printf("pg: %+v", Shared.Postgres.Config)
 }

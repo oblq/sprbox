@@ -63,17 +63,21 @@ func LoadToolBox(toolBox interface{}, configPath string) (err error) {
 func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, level int) error {
 	switch fv.Kind() {
 	case reflect.Ptr:
-		if !fv.CanSet() || sf.Anonymous {
+		// skip already initialized pointers (as can be a '*config'
+		// field configured in 'configurable' interface call).
+		if !fv.CanSet() || sf.Anonymous || !fv.IsNil() {
 			return nil
 		}
-		//if _, isConfigurable := fv.Interface().(configurable); isConfigurable {
 		fv.Set(reflect.New(fv.Type().Elem()))
 		return loadField(configPath, sf, fv.Elem(), level)
-		//}
-		//return nil
 
 	case reflect.Struct:
-		if !fv.CanSet() || sf.Anonymous {
+		// !reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface())
+		// is an already configured field (as can be a 'config' field configured in
+		// 'configurable' interface call).
+		if !fv.CanSet() ||
+			sf.Anonymous ||
+			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
 		}
 
