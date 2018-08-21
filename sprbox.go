@@ -5,14 +5,13 @@
 package sprbox
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"syscall"
 	"unsafe"
-
-	"encoding/json"
-	"net/http"
 
 	"gopkg.in/yaml.v2"
 )
@@ -47,12 +46,10 @@ func init() {
 	//coloredLogs = isTerminal(os.Stdout.Fd())
 }
 
-const ioctlReadTermios = syscall.TIOCGETA
-
 // isTerminal return true if the file descriptor is terminal.
 func isTerminal(fd uintptr) bool {
 	var termios syscall.Termios
-	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, ioctlReadTermios, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TIOCGETA, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
 	return err == 0
 }
 

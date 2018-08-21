@@ -7,25 +7,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var defaultToolConfig = Tool{"default config path"}
+var defaultToolConfig = ToolConfig{Path: configPath}
+
+type ToolConfig struct {
+	Path string
+}
 
 // Tool is a struct implementing 'configurable' interface.
 type Tool struct {
-	ConfigPath string
+	Config ToolConfig
 }
 
 // SpareConfig is the 'configurable' interface implementation.
 func (c *Tool) SpareConfig(config []string) error {
-	return LoadConfig(c, config...)
+	return LoadConfig(&c.Config, config...)
 }
 
 func (c *Tool) SpareConfigBytes(config []byte) error {
-	return Unmarshal(config, c)
+	return Unmarshal(config, &c.Config)
 }
 
 // ToolError is a struct implementing 'configurable' interface.
 type ToolError struct {
-	ConfigPath string
+	Path string
 }
 
 // SpareConfig is the 'configurable' interface implementation.
@@ -35,7 +39,7 @@ func (c *ToolError) SpareConfig(config []string) error {
 
 // ToolNoConfigurable is a struct implementing 'configurable' interface.
 type ToolNoConfigurable struct {
-	ConfigPath string
+	Path string
 }
 
 type ConfigurableSlice []Tool
@@ -61,8 +65,8 @@ func (c *ConfigurableMapPtr) SpareConfig(config []string) error {
 }
 
 type SubBoxConfigurable struct {
-	ConfigPath string
-	Tool       Tool `sprbox:"SubBox/Tool1"`
+	Path string
+	Tool Tool `sprbox:"SubBox/Tool1"`
 }
 
 func (c *SubBoxConfigurable) SpareConfig(config []string) error {
@@ -88,13 +92,13 @@ type Box struct {
 	ToolMapPTR   map[string]*Tool
 	PTRToolMap   *map[string]Tool
 
-	ConSlice    ConfigurableSlice     `sprbox:"ToolSlice.yml"`
-	ConSlicePtr *ConfigurableSlicePtr `sprbox:"ToolSlice.yml"`
-	ConMap      ConfigurableMap       `sprbox:"ToolMap.yml"`
-	ConMapPtr   *ConfigurableMapPtr   `sprbox:"ToolMap.yml"`
+	ConSlice    ConfigurableSlice     `sprbox:"conToolSlice.yml"`
+	ConSlicePtr *ConfigurableSlicePtr `sprbox:"conToolSlice.yml"`
+	ConMap      ConfigurableMap       `sprbox:"conToolMap.yml"`
+	ConMapPtr   *ConfigurableMapPtr   `sprbox:"conToolMap.yml"`
 
-	ConSliceOmit ConfigurableSlice `sprbox:"omit"`
-	ConMapOmit   ConfigurableMap   `sprbox:"omit"`
+	ConSliceOmit ConfigurableSlice `sprbox:"-"`
+	ConMapOmit   ConfigurableMap   `sprbox:"-"`
 }
 
 func TestBox(t *testing.T) {
@@ -104,31 +108,57 @@ func TestBox(t *testing.T) {
 	createTOML(defaultToolConfig, "PTRTool.toml", t)
 	createYAML(defaultToolConfig, "SubBox/Tool1.yaml", t)
 
-	ts := []Tool{
-		Tool{"test1"},
-		Tool{"test2"},
+	ts := []ToolConfig{
+		ToolConfig{configPath},
+		ToolConfig{configPath},
 	}
 	createYAML(ts, "ToolSlice.yml", t)
 	createYAML(ts, "PTRToolSlice.yml", t)
 
-	tsptr := []*Tool{
-		&Tool{"test1"},
-		&Tool{"test2"},
+	tsptr := []*ToolConfig{
+		&ToolConfig{configPath},
+		&ToolConfig{configPath},
 	}
 	createJSON(tsptr, "ToolSlicePTR.json", t)
 
-	tm := map[string]Tool{
-		"test1": Tool{"test1"},
-		"test2": Tool{"test2"},
+	tm := map[string]ToolConfig{
+		"test1": ToolConfig{configPath},
+		"test2": ToolConfig{configPath},
 	}
 	createYAML(tm, "ToolMap.yml", t)
 	createTOML(tm, "PTRToolMap.toml", t)
 
-	tmptr := map[string]*Tool{
-		"test1": &Tool{"test1"},
-		"test2": &Tool{"test2"},
+	tmptr := map[string]*ToolConfig{
+		"test1": &ToolConfig{configPath},
+		"test2": &ToolConfig{configPath},
 	}
 	createJSON(tmptr, "ToolMapPTR.json", t)
+
+	conTS := []Tool{
+		Tool{Config: ToolConfig{configPath}},
+		Tool{Config: ToolConfig{configPath}},
+	}
+	createYAML(conTS, "conToolSlice.yml", t)
+	createYAML(conTS, "conPTRToolSlice.yml", t)
+
+	conTSptr := []*Tool{
+		&Tool{Config: ToolConfig{configPath}},
+		&Tool{Config: ToolConfig{configPath}},
+	}
+	createJSON(conTSptr, "conToolSlicePTR.json", t)
+
+	conTM := map[string]Tool{
+		"test1": Tool{Config: ToolConfig{configPath}},
+		"test2": Tool{Config: ToolConfig{configPath}},
+	}
+	createYAML(conTM, "conToolMap.yml", t)
+	createTOML(conTM, "conPTRToolMap.toml", t)
+
+	conTMptr := map[string]*Tool{
+		"test1": &Tool{Config: ToolConfig{configPath}},
+		"test2": &Tool{Config: ToolConfig{configPath}},
+	}
+	createJSON(conTMptr, "conToolMapPTR.json", t)
 
 	defer removeConfigFiles(t)
 
@@ -141,18 +171,23 @@ func TestBox(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Equal(t, defaultToolConfig.ConfigPath, test.SubBox.Tool1.ConfigPath, "subBox not correctly loaded")
-	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool.ConfigPath, "test.Tool.ConfigPath is empty")
-	assert.NotEqual(t, 0, len(test.PTRTool.ConfigPath), "test.PTRTool.ConfigPath is empty")
-	assert.Equal(t, 0, len(test.ToolNoConfigurable.ConfigPath), "test.ToolNoConfigurable.ConfigPath:", test.ToolNoConfigurable.ConfigPath)
-	assert.Equal(t, 0, len(test.PTRToolNoConfigurable.ConfigPath), "test.PTRToolNoConfigurable.ConfigPath:", test.PTRToolNoConfigurable.ConfigPath)
+	assert.Equal(t, configPath, test.SubBox.Tool1.Config.Path, "subBox not correctly loaded")
+	assert.Equal(t, configPath, test.Tool.Config.Path, "test.Tool.Config.Path is empty")
+	assert.Equal(t, configPath, test.PTRTool.Config.Path, "test.PTRTool.Config.Path is empty")
+	assert.Equal(t, 0, len(test.ToolNoConfigurable.Path), "test.ToolNoConfigurable.Path:", test.ToolNoConfigurable.Path)
+	assert.Equal(t, 0, len(test.PTRToolNoConfigurable.Path), "test.PTRToolNoConfigurable.Path:", test.PTRToolNoConfigurable.Path)
 
-	assert.NotEqual(t, 0, len(test.ToolSlice[0].ConfigPath), "test.ToolSlice.ConfigPath is empty")
-	assert.NotEqual(t, 0, len(test.ToolSlicePTR[0].ConfigPath), "test.ToolSlicePTR.ConfigPath is empty")
-	assert.NotEqual(t, 0, len((*test.PTRToolSlice)[0].ConfigPath), "test.PTRToolSlice.ConfigPath is empty")
-	assert.NotEqual(t, 0, len(test.ToolMap["test1"].ConfigPath), "test.ToolMap.ConfigPath is empty")
-	assert.NotEqual(t, 0, len(test.ToolMapPTR["test1"].ConfigPath), "test.ToolMapPTR.ConfigPath is empty")
-	assert.NotEqual(t, 0, len((*test.PTRToolMap)["test1"].ConfigPath), "test.PTRToolMap.ConfigPath is empty")
+	assert.Equal(t, configPath, test.ToolSlice[0].Config.Path, "test.ToolSlice.Config.Path is empty")
+	assert.Equal(t, configPath, test.ToolSlicePTR[0].Config.Path, "test.ToolSlicePTR.Config.Path is empty")
+	assert.Equal(t, configPath, (*test.PTRToolSlice)[0].Config.Path, "test.PTRToolSlice.Config.Path is empty")
+	assert.Equal(t, configPath, test.ToolMap["test1"].Config.Path, "test.ToolMap.Config.Path is empty")
+	assert.Equal(t, configPath, test.ToolMapPTR["test1"].Config.Path, "test.ToolMapPTR.Config.Path is empty")
+	assert.Equal(t, configPath, (*test.PTRToolMap)["test1"].Config.Path, "test.PTRToolMap.Config.Path is empty")
+
+	assert.Equal(t, configPath, test.ConSlice[0].Config.Path, "test.ConSlice[0].Config.Path:", test.ConSlice[0].Config.Path)
+	assert.Equal(t, configPath, (*test.ConSlicePtr)[0].Config.Path, "(*test.ConSlicePtr)[0].Config.Path:", (*test.ConSlicePtr)[0].Config.Path)
+	assert.Equal(t, configPath, test.ConMap["test1"].Config.Path, "test.ConMap['test1'].Config.Path:", test.ConMap["test1"].Config.Path)
+	assert.Equal(t, configPath, (*test.ConMapPtr)["test1"].Config.Path, "(*test.ConMapPtr)['test1'].Config.Path:", (*test.ConMapPtr)["test1"].Config.Path)
 
 	SetDebug(false)
 }
@@ -213,8 +248,8 @@ func TestNilBox(t *testing.T) {
 	if err := LoadToolBox(&test1, configPath); err != nil {
 		t.Error(err)
 	}
-	assert.NotEqual(t, 0, len(test1.Tool1.ConfigPath), "test1.Tool1.ConfigPath:", test1.Tool1.ConfigPath)
-	assert.NotEqual(t, 0, len(test1.Tool2.ConfigPath), "test1.Tool2.ConfigPath:", test1.Tool2.ConfigPath)
+	assert.NotEqual(t, 0, len(test1.Tool1.Config.Path), "test1.Tool1.Config.Path:", test1.Tool1.Config.Path)
+	assert.NotEqual(t, 0, len(test1.Tool2.Config.Path), "test1.Tool2.Config.Path:", test1.Tool2.Config.Path)
 
 	var test2 *BoxNil
 	if err := LoadToolBox(test2, configPath); err != nil {
@@ -227,8 +262,8 @@ func TestNilBox(t *testing.T) {
 	if err := LoadToolBox(test3, configPath); err != nil {
 		t.Error(err)
 	}
-	assert.NotEqual(t, 0, len(test3.Tool1.ConfigPath), "test3.Tool1.ConfigPath:", test3.Tool1.ConfigPath)
-	assert.NotEqual(t, 0, len(test3.Tool2.ConfigPath), "test3.Tool2.ConfigPath:", test3.Tool2.ConfigPath)
+	assert.NotEqual(t, 0, len(test3.Tool1.Config.Path), "test3.Tool1.Config.Path:", test3.Tool1.Config.Path)
+	assert.NotEqual(t, 0, len(test3.Tool2.Config.Path), "test3.Tool2.Config.Path:", test3.Tool2.Config.Path)
 
 	SetColoredLogs(true)
 }
@@ -249,9 +284,9 @@ func TestConfigFiles(t *testing.T) {
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	assert.NotEqual(t, 0, len(test.Tool1.ConfigPath), "test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
-	assert.NotEqual(t, 0, len(test.Tool2.ConfigPath), "test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
-	assert.NotEqual(t, 0, len(test.Tool3.ConfigPath), "test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
+	assert.NotEqual(t, 0, len(test.Tool1.Config.Path), "test.Tool1.Path:", test.Tool1.Config.Path)
+	assert.NotEqual(t, 0, len(test.Tool2.Config.Path), "test.Tool2.Path:", test.Tool2.Config.Path)
+	assert.NotEqual(t, 0, len(test.Tool3.Config.Path), "test.Tool3.Path:", test.Tool3.Config.Path)
 }
 
 func TestConfigFileNotFound(t *testing.T) {
@@ -261,10 +296,10 @@ func TestConfigFileNotFound(t *testing.T) {
 
 type BoxTags struct {
 	Tool1 Tool
-	Tool2 Tool  `sprbox:"omit"`
+	Tool2 Tool  `sprbox:"-"`
 	Tool3 Tool  `sprbox:"test.yml"`
-	Tool5 Tool  `sprbox:"test.yml,omit"`
-	Tool6 *Tool `sprbox:"omit"`
+	Tool5 Tool  `sprbox:"-"`
+	Tool6 *Tool `sprbox:"-"`
 	Tool7 *Tool
 	Tool8 *Tool `sprbox:"tool8"`
 }
@@ -274,7 +309,7 @@ func TestBoxTags(t *testing.T) {
 
 	devConfig := defaultToolConfig
 	devpath := "dev"
-	devConfig.ConfigPath = devpath
+	devConfig.Path = devpath
 
 	createYAML(devConfig, "Tool7.development.yml", t)
 	createYAML(defaultToolConfig, "Tool1.yml", t)
@@ -287,18 +322,18 @@ func TestBoxTags(t *testing.T) {
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool1.ConfigPath, "test.Tool1.ConfigPath:", test.Tool1.ConfigPath)
-	assert.NotEqual(t, defaultToolConfig.ConfigPath, test.Tool2.ConfigPath, "test.Tool2.ConfigPath:", test.Tool2.ConfigPath)
-	assert.Equal(t, defaultToolConfig.ConfigPath, test.Tool3.ConfigPath, "test.Tool3.ConfigPath:", test.Tool3.ConfigPath)
-	assert.Equal(t, 0, len(test.Tool5.ConfigPath), "test.Tool5.ConfigPath:", test.Tool5.ConfigPath)
-	assert.NotEqual(t, defaultToolConfig.ConfigPath, test.Tool6.ConfigPath, "test.Tool6.ConfigPath:", test.Tool6.ConfigPath)
-	assert.Equal(t, devpath, test.Tool7.ConfigPath, "test.Tool7.ConfigPath:", test.Tool7.ConfigPath)
-	assert.Equal(t, devpath, test.Tool8.ConfigPath, "test.Tool8.ConfigPath:", test.Tool8.ConfigPath)
+	assert.Equal(t, defaultToolConfig.Path, test.Tool1.Config.Path, "test.Tool1.Config.Path:", test.Tool1.Config.Path)
+	assert.NotEqual(t, defaultToolConfig.Path, test.Tool2.Config.Path, "test.Tool2.Config.Path:", test.Tool2.Config.Path)
+	assert.Equal(t, defaultToolConfig.Path, test.Tool3.Config.Path, "test.Tool3.Config.Path:", test.Tool3.Config.Path)
+	assert.Equal(t, 0, len(test.Tool5.Config.Path), "test.Tool5.Config.Path:", test.Tool5.Config.Path)
+	assert.NotEqual(t, defaultToolConfig.Path, test.Tool6.Config.Path, "test.Tool6.Config.Path:", test.Tool6.Config.Path)
+	assert.Equal(t, devpath, test.Tool7.Config.Path, "test.Tool7.Path:", test.Tool7.Config.Path)
+	assert.Equal(t, devpath, test.Tool8.Config.Path, "test.Tool8.Path:", test.Tool8.Config.Path)
 }
 
 type BoxAfterConfig struct {
 	Tool1 Tool
-	Tool2 Tool `sprbox:"omit"`
+	Tool2 Tool `sprbox:"-"`
 }
 
 func TestBoxAfterConfig(t *testing.T) {
@@ -307,11 +342,11 @@ func TestBoxAfterConfig(t *testing.T) {
 
 	tString := "must remain the same"
 	test := BoxAfterConfig{}
-	test.Tool2 = Tool{ConfigPath: tString}
+	test.Tool2 = Tool{Config: ToolConfig{Path: tString}}
 	if err := LoadToolBox(&test, configPath); err != nil {
 		t.Error(err)
 	}
 
-	assert.NotEqual(t, 0, len(test.Tool1.ConfigPath), "test1.ConfigPath:", test.Tool1.ConfigPath)
-	assert.Equal(t, tString, test.Tool2.ConfigPath, "test2.ConfigPath:", test.Tool2.ConfigPath)
+	assert.NotEqual(t, 0, len(test.Tool1.Config.Path), "test1.Config.Path:", test.Tool1.Config.Path)
+	assert.Equal(t, tString, test.Tool2.Config.Path, "test2.Path:", test.Tool2.Config.Path)
 }

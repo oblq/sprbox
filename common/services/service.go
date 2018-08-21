@@ -28,7 +28,7 @@ type Service struct {
 
 	// Proxy will be automatically populated inside ServicesMap struct.
 	// Can be set manually in the config file otherwise.
-	Proxy *Service `sprbox:"omit"`
+	Proxy *Service `sprbox:"-"`
 
 	// IPs contains the ip list of the machines running this service
 	// in the format <public:private> (e.g. 192.168.1.10: 127.0.0.1 locally).
@@ -70,7 +70,7 @@ func (s *Service) SpareConfig(configFiles []string) (err error) {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
 		}
-		return nil //s.parseBasePath()
+		return s.parseBasePath()
 	}
 	return
 }
@@ -90,7 +90,7 @@ func (s *Service) SpareConfigBytes(configBytes []byte) (err error) {
 				s.Hosts = append(s.Hosts, PublicIP)
 			}
 		}
-		return nil //s.parseBasePath()
+		return s.parseBasePath()
 	}
 	return
 }

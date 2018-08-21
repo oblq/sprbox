@@ -2,7 +2,6 @@ package sprbox
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -10,6 +9,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"encoding/json"
 
 	"github.com/BurntSushi/toml"
 	"github.com/stretchr/testify/assert"
@@ -397,7 +398,7 @@ func TestMapYAML(t *testing.T) {
 
 	SetDebug(true)
 
-	var configMap map[interface{}]interface{}
+	var configMap map[string]interface{}
 	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.yaml"),
 		filepath.Join(configPath, "config2.yaml"),
@@ -543,7 +544,7 @@ func TestMapMixed(t *testing.T) {
 }
 
 func TestMapNoFiles(t *testing.T) {
-	var configMap map[interface{}]interface{}
+	var configMap map[string]interface{}
 	if err := LoadConfig(configMap, filepath.Join(configPath, "config.yml")); err != nil {
 		t.Log(err)
 	} else {

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
-	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -14,7 +13,7 @@ import (
 
 // Struct field flags.
 const (
-	sftOmit = "omit"
+	sftSkip = "-"
 )
 
 // Errors.
@@ -33,7 +32,7 @@ type configurableInCollection interface {
 }
 
 // If PkgPath is set, the field is not exported
-//	exported := field.PkgPath != ""
+//	exported := field.PkgPath == ""
 
 // LoadToolBox initialize and (eventually) configure the provided struct pointer
 // looking for the config files in the provided configPath.
@@ -63,26 +62,27 @@ func LoadToolBox(toolBox interface{}, configPath string) (err error) {
 func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, level int) error {
 	switch fv.Kind() {
 	case reflect.Ptr:
-		// skip already initialized pointers (as can be a '*config'
-		// field configured in 'configurable' interface call).
-		if !fv.CanSet() || sf.Anonymous || !fv.IsNil() {
+		if !fv.CanSet() || sf.Anonymous {
 			return nil
 		}
-		fv.Set(reflect.New(fv.Type().Elem()))
+		// skip already initialized pointers (as can be a '*Config'
+		// field configured in 'configurable' interface call).
+		if fv.IsNil() {
+			fv.Set(reflect.New(fv.Type().Elem()))
+		}
 		return loadField(configPath, sf, fv.Elem(), level)
 
 	case reflect.Struct:
 		// !reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface())
-		// is an already configured field (as can be a 'config' field configured in
+		// is an already configured field (as can be a 'Config' field configured in
 		// 'configurable' interface call).
-		if !fv.CanSet() ||
-			sf.Anonymous ||
+		if !fv.CanSet() || sf.Anonymous ||
 			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
 		}
 
 		configFiles := []string{sf.Name}
-		if omit := parseTags(&configFiles, sf); omit {
+		if skip := parseTags(&configFiles, sf); skip {
 			return nil
 		}
 
@@ -100,7 +100,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		for i := 0; i < fv.NumField(); i++ {
 			ssf := fv.Type().Field(i)
 			sfv := fv.Field(i)
-			verbosePrintf("%ssub-field: %s\n", strings.Repeat("    ", level), ssf.Name)
+			verbosePrintf("%ssub-field: %s\n", strings.Repeat(" -> ", level), ssf.Name)
 			//subPath := filepath.Join(configPath, sf.Name)
 			if err := loadField(configPath, &ssf, sfv, level); err != nil {
 				return err
@@ -115,7 +115,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		}
 
 		configFiles := []string{sf.Name}
-		if omit := parseTags(&configFiles, sf); omit {
+		if skip := parseTags(&configFiles, sf); skip {
 			return nil
 		}
 
@@ -181,7 +181,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		}
 
 		configFiles := []string{sf.Name}
-		if omit := parseTags(&configFiles, sf); omit {
+		if skip := parseTags(&configFiles, sf); skip {
 			return nil
 		}
 
@@ -250,28 +250,26 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 	}
 }
 
-// parseTags returns the config file name and the omit flag.
+// parseTags returns the config file name and the skip flag.
 // The name will be returned also if not specified in tags,
 // the field name without extension will be returned in that case,
 // loadConfig will look for a file with that prefix and any kind
 // of extension, if necessary (no '.' in file name).
-func parseTags(configFiles *[]string, f *reflect.StructField) (omit bool) {
+func parseTags(configFiles *[]string, f *reflect.StructField) (skip bool) {
 	tag, found := f.Tag.Lookup(sftKey)
 	if !found {
 		return
 	}
 
-	if regexp.MustCompile(sftOmit).MatchString(tag) {
+	if tag == sftSkip {
 		//printLoadResult(f.Name, f.Type, errOmit)
 		return true
 	}
 
 	tagFields := strings.Split(tag, ",")
 	for _, flag := range tagFields {
-		if flag != sftOmit {
-			files := strings.Split(flag, "|")
-			*configFiles = append(*configFiles, files...)
-		}
+		files := strings.Split(flag, "|")
+		*configFiles = append(*configFiles, files...)
 	}
 
 	return

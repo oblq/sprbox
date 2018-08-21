@@ -31,8 +31,8 @@ type ToolBox struct {
 	// so it can be loaded also directly inside slices or maps using a single config file.
 	WPS []Workerful
 
-	// Optionally add the 'omit' value so sprbox will skip that field.
-	OmittedTool Tool `sprbox:"omit"`
+	// Optionally add the '-' value so sprbox will skip that field.
+	OmittedTool Tool `sprbox:"-"`
 }
 
 // Shared is the app toolbox, `app.Shared`.

@@ -133,7 +133,7 @@ func parseConfigTags(elem interface{}, indent string) error {
 
 // parseTemplateFile parse all text/template placeholders
 // (eg.: {{.Key}}) in config files.
-func parseTemplate(file []byte, config interface{}) error {
+func parseTemplateBytes(file []byte, config interface{}) error {
 	var buf bytes.Buffer
 	var tpl *template.Template
 	var err error
@@ -204,7 +204,9 @@ func Unmarshal(data []byte, config interface{}) (err error) {
 			config, strings.TrimSuffix(string(data), "\n"))
 	}
 
-	if err = parseTemplate(data, config); err != nil {
+	//debugPrintf("elem: %s\n%+v\n", string(data), config)
+
+	if err = parseTemplateBytes(data, config); err != nil {
 		return err
 	}
 	return parseConfigTags(config, "")
@@ -242,19 +244,22 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 			err = fmt.Errorf("unknown data format, can't unmarshal file: '%s'", file)
 		}
 
-		if err != nil {
+		if err = parseTemplateFile(file, config); err != nil {
 			return err
 		}
 
+		if err != nil {
+			return err
+		}
 	}
 
-	configB, err := yaml.Marshal(config)
-	if err != nil {
-		return err
-	}
-	if err = parseTemplate(configB, config); err != nil {
-		return err
-	}
+	//configB, err := yaml.Marshal(config)
+	//if err != nil {
+	//	return err
+	//}
+	//if err = parseTemplate(configB, config); err != nil {
+	//	return err
+	//}
 
 	defer debugPrintf("%s\n", green(dump(config)))
 	return parseConfigTags(config, "")
