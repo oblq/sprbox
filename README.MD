@@ -56,10 +56,9 @@ type ToolBox struct {
 		// like the struct field first (Pictures.*).
 		// File extension can be omitted.
 		//
-		// Configurable elements inside an embedded struct, like this,
-		// will search for config files in a sub-directory
-		// eg.: "./config/MediaProcessing/Pics.*", not "./config/Pics.*"
-		Pictures services.Service `sprbox:"Pics|PicsOverride"`
+		// Use a sub-directory for embedded structs to keep things ordered:
+		// mp/Pics -> "./config/mp/Pics.*"
+		Pictures services.Service `sprbox:"mp/Pics|mp/PicsOverride"`
 		Videos   services.Service
 	}
 
@@ -239,14 +238,6 @@ func (sx *StructX) SpareConfig(configFiles []string) (err error) {
 	sx.StructX = packagex.NewStructX(cfg)
 	return
 }
-
-// SpareConfigBytes optionally allow to load StructX inside a slice or a map directly.
-func (sx *StructX) SpareConfigBytes(configBytes []byte) (err error) {
-	var cfg packagex.Config
-	err = sprbox.Unmarshal(configBytes, &cfg)
-	sx.StructX = packagex.NewStructX(cfg)
-	return
-}
 ```
 
 From here on you can use the StructX in a toolbox with automatic init/config:
@@ -336,7 +327,10 @@ func main() {
 Depending on the [build environment](#the-build-environment), trying to load `config/pg.yml` will also load `config/pg.<environment>.yml` (eg.: `cfg.production.yml`).  
 If any environment-specific file will be found, for the current environment, that will override the generic one.  
 
-It is possible to load multiple separated config files, also of different type, so components configs can be reused:
+It is possible to load multiple separated config files, also of different type, so components configs can be reused.
+Be aware that:
+1. YAML files uses lowercased keys by default, unless you define a custom field tag (struct field `Postgres` will become `"postgres"`, while in TOML or JSON it will remain `"Postgres"`).
+2. The default map interface is `map[interface{}]interface{}` in YAML, not `map[string]interface{}` as in JSON or TOML.
 
 ```go
 func main() {
@@ -348,9 +342,20 @@ func main() {
 
 The file extension in the file path can be omitted, since sprbox can load YAML, TOML and JSON files it will search for `cfg.*` using RegEx, the config file itself must have an extension.  
 
-Keep in mind that:
-1. YAML files uses lowercased keys by default, unless you define a custom field tag (struct field `Postgres` will become `"postgres"`, while in TOML or JSON it will remain `"Postgres"`).
-2. The default map interface is `map[interface{}]interface{}` in YAML, not `map[string]interface{}` as in JSON or TOML.
+Also, LoadConfig() will parse `text/template` placeholders in config files, the key used in placeholders must match the key of the config interface, case-sensitive:
+
+```go
+type Config struct {
+	Base string
+	URL string
+}
+```
+
+```yaml
+base: "https://example.com"
+url: "{{.Base}}/api/v1" # -> will be parsed to: "https://example.com/api/v1"
+}
+```
 
 ## Examples
 - [example](example)
