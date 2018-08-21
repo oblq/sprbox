@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"syscall"
-	"unsafe"
 
 	"gopkg.in/yaml.v2"
 )
@@ -47,11 +45,11 @@ func init() {
 }
 
 // isTerminal return true if the file descriptor is terminal.
-func isTerminal(fd uintptr) bool {
-	var termios syscall.Termios
-	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TIOCGETA, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
-	return err == 0
-}
+//func isTerminal(fd uintptr) bool {
+//	var termios syscall.Termios
+//	_, _, err := syscall.Syscall6(syscall.SYS_IOCTL, fd, syscall.TIOCGETA, uintptr(unsafe.Pointer(&termios)), 0, 0, 0)
+//	return err == 0
+//}
 
 // SetDebug will print detailed logs in console.
 func SetDebug(enabled bool) {
