@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // EnvVarKey is the environment variable that
@@ -36,6 +37,8 @@ var (
 	VCS = NewRepository("./")
 
 	privateTAG = ""
+
+	mutex sync.Mutex
 )
 
 // Default environment's configuration
@@ -84,6 +87,8 @@ func loadTag() {
 // Env returns the current selected environment by
 // matching the privateTAG variable against the environments RegEx.
 func Env() *Environment {
+	mutex.Lock()
+	defer mutex.Unlock()
 	loadTag()
 	switch {
 	case Production.MatchTag(privateTAG):

@@ -1,5 +1,5 @@
-- QueueSize: 0 # 0 = default value (10000)
-  Workers: 16 # 0 = default value (runtime.NumCPU())
+- queuesize: 0 # 0 = default value (10000)
+  workers: 16 # 0 = default value (runtime.NumCPU())
 
-- QueueSize: 8921 # 0 = default value (10000)
-  Workers: 8 # 0 = default value (runtime.NumCPU())
+- queuesize: 8921 # 0 = default value (10000)
+  workers: 8 # 0 = default value (runtime.NumCPU())

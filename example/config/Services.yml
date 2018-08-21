@@ -1,26 +1,22 @@
 api: # Name
+  Name: api
   Version: 1
   ProxyService:
   IPs:
     tasks.api: tasks.api # Docker Swarm
     api: api # Docker
     192.168.1.10: 127.0.0.1 # local development
-  Port: 1234
   Hosts:
     - localhost
     - 127.0.0.1
     - lvh.me
     - api.lvh.me
-  Basepath: "{{.Name}}/v{{.Version}}"
-  Data:
-    sometext: "something in staging"
-    somenumber: 33
+  Basepath: "{{.api.Name}}/v{{.api.Version}}"
 
 frontend: # Name
+  Name: frontend
   Version: 1.0.39
   IPs:
     tasks.frontend: tasks.frontend
   Hosts:
     - example.com
-    - www.example.com
-    - example.co

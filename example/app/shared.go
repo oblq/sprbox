@@ -3,6 +3,7 @@ package app
 import (
 	"github.com/oblq/sprbox"
 	"github.com/oblq/sprbox/common/services"
+	"github.com/oblq/workerful"
 )
 
 // ToolBox is the struct to initialize with sprbox.
@@ -21,17 +22,17 @@ type ToolBox struct {
 	MediaProcessing struct {
 		// Optionally pass one or more config file name in the tag,
 		// file extension can be omitted.
-		Pictures services.Service `sprbox:"Pictures|PicturesOverride"`
-		Videos   services.Service // sprbox will look for ./config/Videos.* here.
+		Pictures services.Service `sprbox:"MediaProcessing/Pictures|MediaProcessing/PicturesOverride"`
+		Videos   services.Service `sprbox:"MediaProcessing/Videos"`
 	}
 
-	WP Workerful
+	WP workerful.Workerful
 	// Workerful implement the 'configurableInCollections' interface,
 	// so it can be loaded also directly inside slices or maps using a single config file.
 	WPS []Workerful
 
-	// Optionally add the 'omit' value so sprbox will skip that field.
-	OmittedTool Tool `sprbox:"omit"`
+	// Optionally add the '-' value so sprbox will skip that field.
+	OmittedTool Tool `sprbox:"-"`
 }
 
 // Shared is the app toolbox, `app.Shared`.
@@ -49,7 +50,7 @@ func init() {
 	sprbox.PrintInfo()
 
 	// set debug mode
-	//sprbox.SetDebug(true)
+	sprbox.SetDebug(true)
 
 	// load toolbox: ---------------------------------------------------------------------------------------------------
 

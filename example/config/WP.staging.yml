@@ -1,1 +1,1 @@
-QueueSize: 8921 # 0 = default value (10000)
+queuesize: 8921 # 0 = default value (10000)

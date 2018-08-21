@@ -2,7 +2,6 @@ package sprbox
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,7 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"encoding/json"
+
 	"github.com/BurntSushi/toml"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 )
 
@@ -396,7 +398,7 @@ func TestMapYAML(t *testing.T) {
 
 	SetDebug(true)
 
-	var configMap map[interface{}]interface{}
+	var configMap map[string]interface{}
 	if err := LoadConfig(&configMap,
 		filepath.Join(configPath, "config1.yaml"),
 		filepath.Join(configPath, "config2.yaml"),
@@ -542,7 +544,7 @@ func TestMapMixed(t *testing.T) {
 }
 
 func TestMapNoFiles(t *testing.T) {
-	var configMap map[interface{}]interface{}
+	var configMap map[string]interface{}
 	if err := LoadConfig(configMap, filepath.Join(configPath, "config.yml")); err != nil {
 		t.Log(err)
 	} else {
@@ -579,4 +581,73 @@ func TestUnmarshal(t *testing.T) {
 	if err := Unmarshal([]byte("wrong"), &configUnmarshal); err == nil {
 		t.Log(err)
 	}
+}
+
+type ConfigWTemplates struct {
+	Text1     string
+	Text2     string
+	TextSlice []string
+	TextMap   map[string]string
+	TStruct   struct {
+		Text     string
+		TStruct2 struct {
+			Text string
+		}
+	}
+}
+
+func defaultConfigWTemplates() ConfigWTemplates {
+	return ConfigWTemplates{
+		Text1:     "Hello",
+		Text2:     "{{.Text1}} world!",
+		TextSlice: []string{"{{.Text1}} world!"},
+		TextMap: map[string]string{
+			"text": "{{.Text1}} world!",
+		},
+		TStruct: struct {
+			Text     string
+			TStruct2 struct{ Text string }
+		}{
+			Text: "{{.Text1}} world!",
+			TStruct2: struct {
+				Text string
+			}{
+				Text: "{{.Text1}} world!",
+			},
+		},
+	}
+}
+
+func TestConfigWTemplates(t *testing.T) {
+	config := defaultConfigWTemplates()
+	fileName := "config.yaml"
+	createYAML(config, fileName, t)
+	defer removeConfigFiles(t)
+
+	var result ConfigWTemplates
+	if err := LoadConfig(&result, filepath.Join(configPath, fileName)); err != nil {
+		t.Error(err)
+	}
+
+	expected := "Hello world!"
+
+	assert.Equal(t, expected, result.Text2, "error in template parsing: %+v", result.Text2)
+	assert.Equal(t, expected, result.TextSlice[0], "error in template parsing: %+v", result.TextSlice[0])
+	assert.Equal(t, expected, result.TextMap["text"], "error in template parsing: %+v", result.TextMap["text"])
+	assert.Equal(t, expected, result.TStruct.Text, "error in template parsing: %+v", result.TStruct.Text)
+	assert.Equal(t, expected, result.TStruct.TStruct2.Text, "error in template parsing: %+v", result.TStruct.TStruct2.Text)
+
+	var uResult ConfigWTemplates
+
+	if bytes, err := yaml.Marshal(config); err != nil {
+		t.Log(err)
+	} else if err := Unmarshal(bytes, &uResult); err != nil {
+		t.Log(err)
+	}
+
+	assert.Equal(t, expected, uResult.Text2, "error in template parsing: %+v", uResult.Text2)
+	assert.Equal(t, expected, uResult.TextSlice[0], "error in template parsing: %+v", uResult.TextSlice[0])
+	assert.Equal(t, expected, uResult.TextMap["text"], "error in template parsing: %+v", uResult.TextMap["text"])
+	assert.Equal(t, expected, uResult.TStruct.Text, "error in template parsing: %+v", uResult.TStruct.Text)
+	assert.Equal(t, expected, uResult.TStruct.TStruct2.Text, "error in template parsing: %+v", uResult.TStruct.TStruct2.Text)
 }
