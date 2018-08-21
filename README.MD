@@ -354,7 +354,6 @@ type Config struct {
 ```yaml
 base: "https://example.com"
 url: "{{.Base}}/api/v1" # -> will be parsed to: "https://example.com/api/v1"
-}
 ```
 
 ## Examples
