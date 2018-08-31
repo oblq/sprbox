@@ -110,7 +110,8 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		return nil
 
 	case reflect.Slice:
-		if !fv.CanSet() || sf.Anonymous {
+		if !fv.CanSet() || sf.Anonymous ||
+			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
 		}
 
@@ -176,7 +177,8 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		return nil
 
 	case reflect.Map:
-		if !fv.CanSet() || sf.Anonymous {
+		if !fv.CanSet() || sf.Anonymous ||
+			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
 		}
 
