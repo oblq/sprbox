@@ -31,7 +31,7 @@ const (
 
 var (
 	debug   = false
-	verbose = false
+	verbose = false // only settable manually
 
 	// coloredLogs enable or disable colors in console.
 	coloredLogs = true
