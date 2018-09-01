@@ -244,11 +244,11 @@ func LoadConfig(config interface{}, files ...string) (err error) {
 			err = fmt.Errorf("unknown data format, can't unmarshal file: '%s'", file)
 		}
 
-		if err = parseTemplateFile(file, config); err != nil {
+		if err != nil {
 			return err
 		}
 
-		if err != nil {
+		if err = parseTemplateFile(file, config); err != nil {
 			return err
 		}
 	}
