@@ -45,8 +45,8 @@ func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string
 // configFilesByEnv will search for the given file in the given path
 // returning all the eligible files (eg.: <path>/myConfig.yaml and <path>/myConfig.<environment>.yaml)
 //
-// 'filePath' can also be passed without file extension,
-// searchFilesByEnv is agnostic and will match any
+// 'files' can also be passed without file extension,
+// configFilesByEnv is agnostic and will match any
 // supported extension in that case.
 //
 // The 'file' name will be searched as (in that order):
