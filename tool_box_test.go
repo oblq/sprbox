@@ -326,7 +326,7 @@ func TestBoxTags(t *testing.T) {
 	assert.NotEqual(t, defaultToolConfig.Path, test.Tool2.Config.Path, "test.Tool2.Config.Path:", test.Tool2.Config.Path)
 	assert.Equal(t, defaultToolConfig.Path, test.Tool3.Config.Path, "test.Tool3.Config.Path:", test.Tool3.Config.Path)
 	assert.Equal(t, 0, len(test.Tool5.Config.Path), "test.Tool5.Config.Path:", test.Tool5.Config.Path)
-	assert.NotEqual(t, defaultToolConfig.Path, test.Tool6.Config.Path, "test.Tool6.Config.Path:", test.Tool6.Config.Path)
+	assert.Nil(t, test.Tool6, "test.Tool6:", test.Tool6)
 	assert.Equal(t, devpath, test.Tool7.Config.Path, "test.Tool7.Path:", test.Tool7.Config.Path)
 	assert.Equal(t, devpath, test.Tool8.Config.Path, "test.Tool8.Path:", test.Tool8.Config.Path)
 }

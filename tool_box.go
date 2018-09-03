@@ -62,6 +62,10 @@ func LoadToolBox(toolBox interface{}, configPath string) (err error) {
 func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, level int) error {
 	switch fv.Kind() {
 	case reflect.Ptr:
+		if tag, found := sf.Tag.Lookup(sftKey); found && tag == sftSkip {
+			return nil
+		}
+
 		if !fv.CanSet() || sf.Anonymous {
 			return nil
 		}
