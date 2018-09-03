@@ -50,7 +50,7 @@ func init() {
 	sprbox.PrintInfo()
 
 	// set debug mode
-	sprbox.SetDebug(true)
+	//sprbox.SetDebug(true)
 
 	// load toolbox: ---------------------------------------------------------------------------------------------------
 
