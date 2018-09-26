@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/labstack/echo"
 	"gopkg.in/yaml.v2"
 )
 
@@ -117,6 +118,10 @@ func PrintInfo() {
 
 func GetInfo(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "\n%s%s\n%s\n", banner, Env().Info(), VCS.Info())
+}
+
+func GetInfoEcho(c echo.Context) error {
+	return c.String(http.StatusOK, fmt.Sprintf("\n%s%s\n%s\n", banner, Env().Info(), VCS.Info()))
 }
 
 // SetColoredLogs toggle colors in console.

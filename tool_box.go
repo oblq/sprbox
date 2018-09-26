@@ -77,9 +77,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		return loadField(configPath, sf, fv.Elem(), level)
 
 	case reflect.Struct:
-		// !reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface())
-		// is an already configured field (as can be a 'Config' field configured in
-		// 'configurable' interface call).
+		// !reflect.Zero(fv.Type()) is an already configured field, so sprbox will skip it.
 		if !fv.CanSet() || sf.Anonymous ||
 			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
@@ -114,6 +112,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		return nil
 
 	case reflect.Slice:
+		// !reflect.Zero(fv.Type()) is an already configured field, so sprbox will skip it.
 		if !fv.CanSet() || sf.Anonymous ||
 			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
@@ -181,6 +180,7 @@ func loadField(configPath string, sf *reflect.StructField, fv reflect.Value, lev
 		return nil
 
 	case reflect.Map:
+		// !reflect.Zero(fv.Type()) is an already configured field, so sprbox will skip it.
 		if !fv.CanSet() || sf.Anonymous ||
 			!reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()) {
 			return nil
