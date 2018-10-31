@@ -45,8 +45,8 @@ var (
 var (
 	Production  = &Environment{id: "production", exps: []string{"production", "master"}, RunCompiled: true}
 	Staging     = &Environment{id: "staging", exps: []string{"staging", "release/*", "hotfix/*"}, RunCompiled: true}
-	Testing     = &Environment{id: "testing", exps: []string{"testing", "test", "feature/*"}, RunCompiled: false}
-	Development = &Environment{id: "development", exps: []string{"development", "develop", "dev"}, RunCompiled: false}
+	Testing     = &Environment{id: "testing", exps: []string{"testing", "test"}, RunCompiled: false}
+	Development = &Environment{id: "development", exps: []string{"development", "develop", "dev", "feature/*"}, RunCompiled: false}
 	Local       = &Environment{id: "local", exps: []string{"local"}, RunCompiled: false}
 )
 
@@ -61,35 +61,34 @@ func init() {
 var testingRegexp = regexp.MustCompile(`_test|(\.test$)|_Test`)
 var inferredBy string
 
-func loadTag() {
-	if len(BUILDENV) > 0 {
-		privateTAG = BUILDENV
-		inferredBy = fmt.Sprintf("'%s', inferred from 'BUILDENV' var, set manually.", privateTAG)
-		return
-	} else if privateTAG = os.Getenv(EnvVarKey); len(privateTAG) > 0 {
-		inferredBy = fmt.Sprintf("'%s', inferred from '%s' environment variable.", privateTAG, EnvVarKey)
-		return
-	} else if VCS != nil {
-		if VCS.Error == nil {
-			privateTAG = VCS.BranchName
-			inferredBy = fmt.Sprintf("<empty>, inferred from git.BranchName (%s).", VCS.BranchName)
-			return
-		}
-	} else if testingRegexp.MatchString(os.Args[0]) {
-		privateTAG = Testing.ID()
-		inferredBy = fmt.Sprintf("'%s', inferred from the running file name (%s).", privateTAG, os.Args[0])
-		return
-	}
-
-	inferredBy = "<empty>, default environment is 'local'."
-}
-
 // Env returns the current selected environment by
 // matching the privateTAG variable against the environments RegEx.
 func Env() *Environment {
 	mutex.Lock()
 	defer mutex.Unlock()
-	loadTag()
+
+	// loading tag
+	if len(BUILDENV) > 0 {
+		privateTAG = BUILDENV
+		inferredBy = fmt.Sprintf("'%s', inferred from 'BUILDENV' var, set manually.", privateTAG)
+		//return
+	} else if privateTAG = os.Getenv(EnvVarKey); len(privateTAG) > 0 {
+		inferredBy = fmt.Sprintf("'%s', inferred from '%s' environment variable.", privateTAG, EnvVarKey)
+		//return
+	} else if VCS != nil {
+		if VCS.Error == nil {
+			privateTAG = VCS.BranchName
+			inferredBy = fmt.Sprintf("<empty>, inferred from git.BranchName (%s).", VCS.BranchName)
+			//return
+		}
+	} else if testingRegexp.MatchString(os.Args[0]) {
+		privateTAG = Testing.ID()
+		inferredBy = fmt.Sprintf("'%s', inferred from the running file name (%s).", privateTAG, os.Args[0])
+		//return
+	} else {
+		inferredBy = "<empty>, default environment is 'local'."
+	}
+
 	switch {
 	case Production.MatchTag(privateTAG):
 		return Production
