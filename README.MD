@@ -130,8 +130,8 @@ Every environment has a set of default RegEx:
 ```
 Production  = []string{"production", "master"}
 Staging     = []string{"staging", "release/*", "hotfix/*"}
-Testing     = []string{"testing", "test", "feature/*"}
-Development = []string{"development", "develop", "dev"}
+Testing     = []string{"testing", "test"}
+Development = []string{"development", "develop", "dev", "feature/*"}
 Local       = []string{"local"}
 ```
 

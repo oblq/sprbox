@@ -27,8 +27,8 @@ var (
 	// Here the default environment RegEx, you can customize them as you want:
 	//  - Production 	exps: Exps{"production", "master"}
 	//	- Staging 	exps: Exps{"staging", "release/*", "hotfix/*"}
-	//	- Testing 	exps: Exps{"testing", "test", "feature/*"}
-	//	- Development 	exps: Exps{"development", "develop", "dev"}
+	//	- Testing 	exps: Exps{"testing", "test"}
+	//	- Development 	exps: Exps{"development", "develop", "dev", "feature/*"}
 	//	- Local 	exps: Exps{"local"}
 	BUILDENV = ""
 
