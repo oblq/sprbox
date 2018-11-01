@@ -19,14 +19,14 @@ import (
 
 // struct field flags
 const (
-	// sftEnv value can be in json format, it will override also the default value
-	sftEnv = "env"
+	// sffEnv value can be in json format, it will override also the default value
+	sffEnv = "env"
 
 	// set the default value
-	sftDefault = "default"
+	sffDefault = "default"
 
 	// return error if missing value
-	sftRequired = "required"
+	sffRequired = "required"
 )
 
 // files type regexp
@@ -78,7 +78,7 @@ func parseConfigTags(elem interface{}, indent string) error {
 
 				kv := strings.Split(flag, "=")
 
-				if kv[0] == sftEnv {
+				if kv[0] == sffEnv {
 					if len(kv) == 2 {
 						if value := os.Getenv(kv[1]); len(value) > 0 {
 							debugPrintf("Loading configuration for struct `%v`'s field `%v` from env %v...\n",
@@ -91,13 +91,13 @@ func parseConfigTags(elem interface{}, indent string) error {
 				}
 
 				if empty := reflect.DeepEqual(fv.Interface(), reflect.Zero(fv.Type()).Interface()); empty {
-					if kv[0] == sftDefault {
+					if kv[0] == sffDefault {
 						if len(kv) == 2 {
 							if err := yaml.Unmarshal([]byte(kv[1]), fv.Addr().Interface()); err != nil {
 								return err
 							}
 						}
-					} else if kv[0] == sftRequired {
+					} else if kv[0] == sffRequired {
 						return errors.New(ft.Name + " is required")
 					}
 				}
@@ -131,7 +131,7 @@ func parseConfigTags(elem interface{}, indent string) error {
 	return nil
 }
 
-// parseTemplateFile parse all text/template placeholders
+// parseTemplateBytes parse all text/template placeholders
 // (eg.: {{.Key}}) in config files.
 func parseTemplateBytes(file []byte, config interface{}) error {
 	var buf bytes.Buffer

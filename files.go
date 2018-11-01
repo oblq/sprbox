@@ -9,11 +9,11 @@ import (
 )
 
 // files type regexp
-const regexExt = `(?i)(.y(|a)ml|.toml|.json)` // `(?i)(\..{3,4})` //
+const extRegexp = `(?i)(.y(|a)ml|.toml|.json)` // `(?i)(\..{3,4})` //
 
 // FILE SEARCH ---------------------------------------------------------------------------------------------------------
 
-// walkConfigPath look for a file matching the passed regex skipping sub-directories.
+// walkConfigPath look for a file matching the passed regex and skipping sub-directories.
 func walkConfigPath(configPath string, regex *regexp.Regexp) (matchedFile string) {
 	err := filepath.Walk(configPath, func(path string, info os.FileInfo, err error) error {
 		// nil if the path does not exist
@@ -67,8 +67,8 @@ func configFilesByEnv(files ...string) (foundFiles []string) {
 		ext := filepath.Ext(fileName)
 		extTrimmed := strings.TrimSuffix(fileName, ext)
 		if len(ext) == 0 {
-			ext = regexExt
-			debugPrintf(darkGrey("\nlooking for '%s%s' in '%s'..."), fileName, regexExt, configPath)
+			ext = extRegexp
+			debugPrintf(darkGrey("\nlooking for '%s%s' in '%s'..."), fileName, extRegexp, configPath)
 		} else {
 			debugPrintf(darkGrey("\nlooking for '%s' in '%s'..."), fileName, configPath)
 		}

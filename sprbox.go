@@ -115,6 +115,7 @@ func PrintInfo() {
 	VCS.PrintInfo()
 }
 
+// GetInfo print info in console from an http request.
 func GetInfo(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "\n%s%s\n%s\n", banner, Env().Info(), VCS.Info())
 }
