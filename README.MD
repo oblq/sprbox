@@ -1,6 +1,10 @@
+# DEPRECATED
+
+***This project has been completely revised and simplyfied in https://github.com/oblq/swap, consider using this one instead.
+This repository is archived and no longer mantained.***
+
 # SpareBox 
 
-[![awesome](https://raw.githubusercontent.com/istio/fortio/master/docs/mentioned-badge.svg?sanitize=true)](https://github.com/avelino/awesome-go)
 ![GitHub tag](https://img.shields.io/github/tag/oblq/sprbox.svg)
 [![Build Status](https://travis-ci.org/oblq/sprbox.svg?branch=master)](https://travis-ci.org/oblq/sprbox)
 [![codecov](https://codecov.io/gh/oblq/sprbox/branch/master/graph/badge.svg)](https://codecov.io/gh/oblq/sprbox)
